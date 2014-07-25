@@ -26,9 +26,4 @@
         "psr-0": { "Phalcon": "" }
     },
     "target-dir": "Phalcon/UserPlugin",
-    "extra": {
-        "branch-alias": {
-            "dev-master": "1-dev"
-        }
-    }
 }
