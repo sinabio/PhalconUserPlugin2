@@ -1,5 +1,4 @@
-# Phalcon User Plugin (alpha)
-## Fork by Mighty-Code
+# Phalcon User Plugin 2 by Mighty-Code
 
 * [About](#about)
 * [Features](#features)
