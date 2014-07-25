@@ -14,8 +14,8 @@ class GoogleConnector
     private $config;
 
     private $scopes = array(
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/userinfo.profile'
+        'https://www.googleapis.com/auth/plus.profile.emails.read ',
+        'https://www.googleapis.com/auth/plus.login'
     );
 
     final public function __construct(array $config)

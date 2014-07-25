@@ -1,12 +1,11 @@
 <?php
 namespace Phalcon\UserPlugin\Forms\User;
 
-use Phalcon\Forms\Form,
-Phalcon\Forms\Element\Password,
-Phalcon\Forms\Element\Submit,
-Phalcon\Validation\Validator\PresenceOf,
-Phalcon\Validation\Validator\StringLength,
-Phalcon\Validation\Validator\Confirmation;
+use Phalcon\Forms\Element\Password;
+use Phalcon\Forms\Form;
+use Phalcon\Validation\Validator\Confirmation;
+use Phalcon\Validation\Validator\PresenceOf;
+use Phalcon\Validation\Validator\StringLength;
 
 /**
  * Phalcon\UserPlugin\Forms\User\ChangePasswordForm
@@ -16,7 +15,9 @@ class ChangePasswordForm extends Form
     public function initialize()
     {
         //Current Password
-        $currentPassword = new Password('currentPassword');
+        $currentPassword = new Password('currentPassword', array(
+            'class' => 'form-control'
+        ));
 
         $currentPassword->addValidators(array(
             new PresenceOf(array(
@@ -26,7 +27,9 @@ class ChangePasswordForm extends Form
 
         $this->add($currentPassword);
 
-        $password = new Password('password');
+        $password = new Password('password', array(
+            'class' => 'form-control'
+        ));
 
         $password->addValidators(array(
             new PresenceOf(array(
@@ -45,7 +48,9 @@ class ChangePasswordForm extends Form
         $this->add($password);
 
         //Confirm Password
-        $confirmPassword = new Password('confirmPassword');
+        $confirmPassword = new Password('confirmPassword',array(
+            'class' => 'form-control'
+        ));
 
         $confirmPassword->addValidators(array(
             new PresenceOf(array(
