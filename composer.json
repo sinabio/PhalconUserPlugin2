@@ -3,7 +3,7 @@
     "type": "library",
     "description": "User plugin for Phalcon PHP framework",
     "keywords": ["phalcon","user","login","facebook","google","twitter","linkedIn"],
-    "homepage": "http://phalconuserplugin2.mighty-code.com/user/login",
+    "homepage": "http://phalconuserplugin2.mighty-code.com",
     "license": "MIT",
     "authors": [
         {
