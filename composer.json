@@ -1,14 +1,14 @@
 {
-    "name": "mighty-code/phalcon-user-plugin",
+    "name": "mighty-code/phalcon-user-plugin-2",
     "type": "library",
     "description": "User plugin for Phalcon PHP framework",
-    "keywords": ["phalcon","user","login","facebook"],
-    "homepage": "https://github.com/calinrada/PhalconUserPlugin",
+    "keywords": ["phalcon","user","login","facebook","google","twitter","linkedIn"],
+    "homepage": "http://phalconuserplugin2.mighty-code.com/user/login",
     "license": "MIT",
     "authors": [
         {
             "name": "Oliver Kaufmann",
-            "email": "okaufmann91@gmail.com"
+            "email": "mighty@mighty-code.com"
         }
     ],
     "minimum-stability": "dev",
