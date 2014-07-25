@@ -15,7 +15,8 @@ class ForgotPasswordForm extends Form
     public function initialize()
     {
         $email = new Text('email', array(
-            'placeholder' => 'Email'
+            'placeholder' => 'Email',
+            'class' => 'form-control'
         ));
         $email->addValidators(array(
             new PresenceOf(array(

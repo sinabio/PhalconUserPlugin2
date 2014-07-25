@@ -22,7 +22,8 @@ class LoginForm extends Form
 
         //Email
         $email = new Text('email', array(
-            'placeholder' => $translate['Email']
+            'placeholder' => $translate['Email'],
+            'class' => 'form-control'
         ));
 
         $email->addValidators(array(
@@ -38,7 +39,8 @@ class LoginForm extends Form
 
         //Password
         $password = new Password('password', array(
-            'placeholder' => $translate['Password']
+            'placeholder' => $translate['Password'],
+            'class' => 'form-control'
         ));
 
         $password->addValidator(

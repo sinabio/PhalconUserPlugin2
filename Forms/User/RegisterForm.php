@@ -20,7 +20,9 @@ class RegisterForm extends Form
 {
     public function initialize($entity=null, $options=null)
     {
-        $name = new Text('name');
+        $name = new Text('name',array(
+            'class' => 'form-control'
+        ));
 
         $name->setLabel('Name');
 
@@ -33,7 +35,9 @@ class RegisterForm extends Form
         $this->add($name);
 
         //Email
-        $email = new Text('email');
+        $email = new Text('email', array(
+            'class' => 'form-control'
+        ));
 
         $email->setLabel('E-Mail');
 
@@ -49,7 +53,9 @@ class RegisterForm extends Form
         $this->add($email);
 
         //Password
-        $password = new Password('password');
+        $password = new Password('password', array(
+            'class' => 'form-control'
+        ));
 
         $password->setLabel('Password');
 
@@ -70,7 +76,9 @@ class RegisterForm extends Form
         $this->add($password);
 
         //Confirm Password
-        $confirmPassword = new Password('confirmPassword');
+        $confirmPassword = new Password('confirmPassword',array(
+            'class' => 'form-control'
+        ));
 
         $confirmPassword->setLabel('Confirm Password');
 
