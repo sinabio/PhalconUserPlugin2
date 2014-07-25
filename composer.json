@@ -25,5 +25,5 @@
     "autoload": {
         "psr-0": { "Phalcon": "" }
     },
-    "target-dir": "Phalcon/UserPlugin",
+    "target-dir": "Phalcon/UserPlugin"
 }
