@@ -17,8 +17,7 @@
         "swiftmailer/swiftmailer": ">=4.3, <6.0",
         "facebook/php-sdk": "3.2.*",
         "nyholm/google-api-php-client": "dev-master",
-        "imagine/imagine": "dev-master",
-        "google/apiclient": "1.0.*@dev"
+        "imagine/imagine": "dev-master"
     },
     "autoload": {
         "files": ["lib/swift_required.php"]
