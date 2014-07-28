@@ -64,6 +64,7 @@ class GoogleConnector
     public function getClient()
     {
         $client = new Client();
+        $client->setAccessType("online");
         $client->setScopes($this->scopes);
         $client->setApplicationName($this->config['application_name']);
         $client->setClientId($this->config['client_id']);
