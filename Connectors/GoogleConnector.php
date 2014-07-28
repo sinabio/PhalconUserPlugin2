@@ -13,10 +13,10 @@ class GoogleConnector
 {
     private $config;
 
-    private $scopes = array(
+    /*private $scopes = array(
         'https://www.googleapis.com/auth/plus.profile.emails.read ',
         'https://www.googleapis.com/auth/plus.login'
-    );
+    );*/
 
     final public function __construct(array $config)
     {
@@ -30,10 +30,10 @@ class GoogleConnector
         $request = $di->get('request');
 
         $client = $this->getClient();
-        $oauth2 = new Oauth2Service($client);
+        $oauth2 = new \Google_Service_Oauth2($client);
 
         if ($request->get('code')) {
-            $client->authenticate();
+            $client->authenticate($request->get('code'));
             $session->set('googleToken', $client->getAccessToken());
             $redirect = $this->config['redirect_uri'];
 
@@ -59,18 +59,24 @@ class GoogleConnector
     /**
      * Get client
      *
-     * @return \GoogleApi\Client
+     * @return \Google_Client
      */
     public function getClient()
     {
-        $client = new Client();
-        $client->setAccessType("online");
-        $client->setScopes($this->scopes);
+        $client = new \Google_Client();
+
+        $client->setAccessType("offline");
+
+        $client->addScope(\Google_Service_Oauth2::PLUS_LOGIN);
+        $client->addScope(\Google_Service_Oauth2::USERINFO_EMAIL);
+
+        //$client->setScopes($this->scopes);
+
         $client->setApplicationName($this->config['application_name']);
         $client->setClientId($this->config['client_id']);
         $client->setClientSecret($this->config['client_secret']);
         $client->setRedirectUri($this->config['redirect_uri']);
-        $client->setDeveloperKey($this->config['developer_key']);
+        //$client->setDeveloperKey($this->config['developer_key']);
 
         return $client;
     }
