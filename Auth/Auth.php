@@ -1,16 +1,16 @@
 <?php
 namespace Phalcon\UserPlugin\Auth;
 
-use Phalcon\Mvc\User\Component,
-Phalcon\UserPlugin\Repository\User\UserRepository as User,
-Phalcon\UserPlugin\Models\User\UserRememberTokens,
-Phalcon\UserPlugin\Models\User\UserSuccessLogins,
-Phalcon\UserPlugin\Models\User\UserFailedLogins;
-
-use Phalcon\UserPlugin\Connectors\LinkedInConnector,
-Phalcon\UserPlugin\Connectors\FacebookConnector,
-Phalcon\UserPlugin\Connectors\GoogleConnector,
-Phalcon\UserPlugin\Connectors\TwitterConnector;
+use Phalcon\Mvc\User\Component;
+use Phalcon\UserPlugin\Connectors\FacebookConnector;
+use Phalcon\UserPlugin\Connectors\GoogleConnector;
+use Phalcon\UserPlugin\Connectors\LinkedInConnector;
+use Phalcon\UserPlugin\Connectors\TwitterConnector;
+use Phalcon\UserPlugin\Models\User\UserFailedLogins;
+use Phalcon\UserPlugin\Models\User\UserRememberTokens;
+use Phalcon\UserPlugin\Models\User\UserSuccessLogins;
+//use Phalcon\UserPlugin\Repository\User\UserRepository as User;
+use Phalcon\UserPlugin\Models\User\User as User;
 
 /**
  * Phalcon\UserPlugin\Auth\Auth
@@ -22,7 +22,7 @@ class Auth extends Component
     /**
      * Checks the user credentials
      *
-     * @param  array  $credentials
+     * @param  array $credentials
      * @return boolan
      */
     public function check($credentials)
@@ -56,16 +56,16 @@ class Auth extends Component
     private function setIdentity($user)
     {
         $st_identity = array(
-            'id'    => $user->getId(),
+            'id' => $user->getId(),
             'email' => $user->getEmail(),
-            'name'  => $user->getName(),
+            'name' => $user->getName(),
         );
 
         if ($user->profile) {
             $st_identity['profile_picture'] = $user->profile->getPicture();
         }
 
-        $this->session->set('auth-identity', $st_identity);
+        $this->di->get('session')->set('auth-identity', $st_identity);
     }
 
     /**
@@ -87,7 +87,7 @@ class Auth extends Component
                 }
             } else {
                 $this->check(array(
-                    'email'    => $this->request->getPost('email'),
+                    'email' => $this->request->getPost('email'),
                     'password' => $this->request->getPost('password'),
                     'remember' => $this->request->getPost('remember')
                 ));
@@ -128,7 +128,7 @@ class Auth extends Component
         if ($facebookUser) {
             $pupRedirect = $di->get('config')->pup->redirect;
             $email = isset($facebookUserProfile['email']) ? $facebookUserProfile['email'] : 'a@a.com';
-            $user = User::findFirst(" email='$email' OR facebook_id='".$facebookUserProfile['id']."' ");
+            $user = User::findFirst(" email='$email' OR facebook_id='" . $facebookUserProfile['id'] . "' ");
 
             if ($user) {
                 $this->checkUserFlags($user);
@@ -181,15 +181,15 @@ class Auth extends Component
     {
         $di = $this->getDI();
         $config = $di->get('config')->pup->connectors->linkedIn->toArray();
-        $config['callback_url'] = $config['callback_url'].'user/loginWithLinkedIn';
+        $config['callback_url'] = $config['callback_url'] . 'user/loginWithLinkedIn';
         $li = new LinkedInConnector($config);
 
-        $token = $this->session->get('linkedIn_token');
-        $token_expires = $this->session->get('linkedIn_token_expires_on', 0);
+        $token = $this->di->get('session')->get('linkedIn_token');
+        $token_expires = $this->di->get('session')->get('linkedIn_token_expires_on', 0);
 
         if ($token && $token_expires > time()) {
             $pupRedirect = $di->get('config')->pup->redirect;
-            $li->setAccessToken($this->session->get('linkedIn_token'));
+            $li->setAccessToken($this->di->get('session')->get('linkedIn_token'));
             $email = $li->get('/people/~/email-address');
             $info = $li->get('/people/~');
 
@@ -205,7 +205,7 @@ class Auth extends Component
 
                 if (!$user->getLinkedinId()) {
                     $user->setLinkedinId($linkedInId);
-                    $user->setLinkedinName($info['firstName'].' '.$info['lastName']);
+                    $user->setLinkedinName($info['firstName'] . ' ' . $info['lastName']);
                     $user->update();
                 }
 
@@ -217,7 +217,7 @@ class Auth extends Component
                 $user->setEmail($email);
                 $user->setPassword($di->get('security')->hash($password));
                 $user->setLinkedinId($linkedInId);
-                $user->setLinkedinName($info['firstName'].' '.$info['lastName']);
+                $user->setLinkedinName($info['firstName'] . ' ' . $info['lastName']);
                 $user->setLinkedinData(json_encode($info));
                 $user->setMustChangePassword(0);
                 $user->setGroupId(2);
@@ -243,8 +243,8 @@ class Auth extends Component
             if ($this->request->get('code')) {
                 $token = $li->getAccessToken($this->request->get('code'));
                 $token_expires = $li->getAccessTokenExpiration();
-                $this->session->set('linkedIn_token', $token);
-                $this->session->set('linkedIn_token_expires_on', time() + $token_expires);
+                $this->di->get('session')->set('linkedIn_token', $token);
+                $this->di->get('session')->set('linkedIn_token_expires_on', time() + $token_expires);
             }
         }
 
@@ -259,11 +259,11 @@ class Auth extends Component
      */
     public function loginWithTwitter()
     {
-        $di          = $this->getDI();
+        $di = $this->getDI();
         $pupRedirect = $di->get('config')->pup->redirect;
-        $oauth       = $this->session->get('twitterOauth');
-        $config      = $di->get('config')->pup->connectors->twitter->toArray();
-        $config      = array_merge($config, array('token' => $oauth['token'], 'secret' => $oauth['secret']));
+        $oauth = $this->di->get('session')->get('twitterOauth');
+        $config = $di->get('config')->pup->connectors->twitter->toArray();
+        $config = array_merge($config, array('token' => $oauth['token'], 'secret' => $oauth['secret']));
 
         $twitter = new TwitterConnector($config, $di);
         if ($this->request->get('oauth_token')) {
@@ -297,7 +297,7 @@ class Auth extends Component
                             return $this->response->redirect($pupRedirect->success);
                         } else {
                             $password = $this->generatePassword();
-                            $email = $response['screen_name'].rand(100000,999999).'@domain.tld'; // Twitter does not prived user's email
+                            $email = $response['screen_name'] . rand(100000, 999999) . '@domain.tld'; // Twitter does not prived user's email
                             $user = new User();
                             $user->setEmail($email);
                             $user->setPassword($di->get('security')->hash($password));
@@ -313,7 +313,7 @@ class Auth extends Component
                             if (true == $user->create()) {
                                 $this->setIdentity($user);
                                 $this->saveSuccessLogin($user);
-                                $this->flashSession->notice('Because Twitter does not provide an email address, we had randomly generated one: '.$email);
+                                $this->flashSession->notice('Because Twitter does not provide an email address, we had randomly generated one: ' . $email);
 
                                 return $this->response->redirect($pupRedirect->success);
                             } else {
@@ -338,11 +338,11 @@ class Auth extends Component
 
     public function loginWithGoogle()
     {
-        $di       = $this->getDI();
-        $config   = $di->get('config')->pup->connectors->google->toArray();
+        $di = $this->getDI();
+        $config = $di->get('config')->pup->connectors->google->toArray();
 
-        $pupRedirect            = $di->get('config')->pup->redirect;
-        $config['redirect_uri'] = $config['redirect_uri'].'user/loginWithGoogle';
+        $pupRedirect = $di->get('config')->pup->redirect;
+        $config['redirect_uri'] = $config['redirect_uri'] . 'user/loginWithGoogle';
 
         $google = new GoogleConnector($config);
 
@@ -352,9 +352,9 @@ class Auth extends Component
             return $this->response->redirect($response['redirect'], true);
         } else {
             $gplusId = $response['userinfo']['id'];
-            $email   = $response['userinfo']['email'];
-            $name    = $response['userinfo']['name'];
-            $user    = User::findFirst("gplus_id='$gplusId' OR email = '$email'");
+            $email = $response['userinfo']['email'];
+            $name = $response['userinfo']['name'];
+            $user = User::findFirst("gplus_id='$gplusId' OR email = '$email'");
 
             if ($user) {
                 $this->checkUserFlags($user);
@@ -385,7 +385,7 @@ class Auth extends Component
                 $user->setSuspended(0);
                 $user->setActive(1);
 
-                if (true == $user->create()) {
+                if (true == $user->save()) {
                     $this->setIdentity($user);
                     $this->saveSuccessLogin($user);
 
@@ -583,7 +583,7 @@ class Auth extends Component
      */
     public function getIdentity()
     {
-        return $this->session->get('auth-identity');
+        return $this->di->get('session')->get('auth-identity');
     }
 
     /**
@@ -593,10 +593,11 @@ class Auth extends Component
      */
     public function getUserName()
     {
-        $identity = $this->session->get('auth-identity');
+        $identity = $this->di->get('session')->get('auth-identity');
 
         return isset($identity['name']) ? $identity['name'] : false;
     }
+
     /**
      * Returns the id of the user
      *
@@ -604,7 +605,7 @@ class Auth extends Component
      */
     public function getUserId()
     {
-        $identity = $this->session->get('auth-identity');
+        $identity = $this->di->get('session')->get('auth-identity');
 
         return isset($identity['id']) ? $identity['id'] : false;
     }
@@ -625,13 +626,13 @@ class Auth extends Component
             $this->cookies->get('RMT')->delete();
         }
 
-        $this->session->remove('auth-identity');
-        $this->session->remove('fb_'.$fbAppId.'_code');
-        $this->session->remove('fb_'.$fbAppId.'_access_token');
-        $this->session->remove('fb_'.$fbAppId.'_user_id');
-        $this->session->remove('googleToken');
-        $this->session->remove('linkedIn_token');
-        $this->session->remove('linkedIn_token_expires_on');
+        $this->di->get('session')->remove('auth-identity');
+        $this->di->get('session')->remove('fb_' . $fbAppId . '_code');
+        $this->di->get('session')->remove('fb_' . $fbAppId . '_access_token');
+        $this->di->get('session')->remove('fb_' . $fbAppId . '_user_id');
+        $this->di->get('session')->remove('googleToken');
+        $this->di->get('session')->remove('linkedIn_token');
+        $this->di->get('session')->remove('linkedIn_token_expires_on');
     }
 
     /**
@@ -659,7 +660,7 @@ class Auth extends Component
      */
     public function getUser()
     {
-        $identity = $this->session->get('auth-identity');
+        $identity = $this->di->get('session')->get('auth-identity');
 
         if (isset($identity['id'])) {
             $user = User::findFirstById($identity['id']);
@@ -683,6 +684,6 @@ class Auth extends Component
     {
         $chars = "abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ123456789#@%_.";
 
-        return substr(str_shuffle($chars),0,$length);
+        return substr(str_shuffle($chars), 0, $length);
     }
 }

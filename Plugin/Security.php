@@ -28,7 +28,7 @@ class Security extends Plugin
      * @param  Dispatcher                      $dispatcher
      * @return \Phalcon\Http\ResponseInterface
     */
-    public function beforeExecuteRoute(Event $event, Dispatcher $dispatcher)
+    public function beforeDispatchLoop(Event $event, Dispatcher $dispatcher)
     {
         $config = $dispatcher->getDI()->get('config');
         $pupConfig = $this->getConfigStructure($config);
