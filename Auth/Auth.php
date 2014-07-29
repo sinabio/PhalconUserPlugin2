@@ -6,11 +6,13 @@ use Phalcon\UserPlugin\Connectors\FacebookConnector;
 use Phalcon\UserPlugin\Connectors\GoogleConnector;
 use Phalcon\UserPlugin\Connectors\LinkedInConnector;
 use Phalcon\UserPlugin\Connectors\TwitterConnector;
+use Phalcon\UserPlugin\Models\User\User;
 use Phalcon\UserPlugin\Models\User\UserFailedLogins;
 use Phalcon\UserPlugin\Models\User\UserRememberTokens;
 use Phalcon\UserPlugin\Models\User\UserSuccessLogins;
+
 //use Phalcon\UserPlugin\Repository\User\UserRepository as User;
-use Phalcon\UserPlugin\Models\User\User;
+
 /**
  * Phalcon\UserPlugin\Auth\Auth
  *
@@ -18,6 +20,25 @@ use Phalcon\UserPlugin\Models\User\User;
  */
 class Auth extends Component
 {
+    protected $_modelConfig = array();
+
+    /**
+     * Initialize Auth component
+     */
+    public function __construct()
+    {
+        $di = $this->getDI();
+        $this->_modelConfig = $di->get('config')->pup->models;
+    }
+
+    public function getType($name)
+    {
+        $userType = new $this->_modelConfig[$name];
+
+
+        return $userType;
+    }
+
     /**
      * Checks the user credentials
      *
@@ -26,7 +47,9 @@ class Auth extends Component
      */
     public function check($credentials)
     {
-        $user = User::findFirstByEmail(strtolower($credentials['email']));
+        $userType = $this->getType("user");
+
+        $user = $userType::findFirstByEmail(strtolower($credentials['email']));
         if ($user == false) {
             $this->registerUserThrottling(null);
             throw new Exception('Wrong email/password combination');
@@ -60,9 +83,9 @@ class Auth extends Component
             'name' => $user->getName(),
         );
 
-        if ($user->profile) {
-            $st_identity['profile_picture'] = $user->profile->getPicture();
-        }
+//        if ($user->profile) {
+//            $st_identity['profile_picture'] = $user->profile->getPicture();
+//        }
 
         $this->session->set('auth-identity', $st_identity);
     }
@@ -105,6 +128,8 @@ class Auth extends Component
      */
     public function loginWithFacebook()
     {
+        $userType = $this->getType("user");
+
         $di = $this->getDI();
         $facebook = new FacebookConnector($di);
         $facebookUser = $facebook->getUser();
@@ -127,7 +152,7 @@ class Auth extends Component
         if ($facebookUser) {
             $pupRedirect = $di->get('config')->pup->redirect;
             $email = isset($facebookUserProfile['email']) ? $facebookUserProfile['email'] : 'a@a.com';
-            $user = User::findFirst(" email='$email' OR facebook_id='" . $facebookUserProfile['id'] . "' ");
+            $user = $userType::findFirst(" email='$email' OR facebook_id='" . $facebookUserProfile['id'] . "' ");
 
             if ($user) {
                 $this->checkUserFlags($user);
@@ -145,7 +170,7 @@ class Auth extends Component
             } else {
                 $password = $this->generatePassword();
 
-                $user = new User();
+                $user = new $userType;
                 $user->setDI($di);
                 $user->setEmail($email);
                 $user->setPassword($di->get('security')->hash($password));
@@ -179,7 +204,10 @@ class Auth extends Component
      */
     public function loginWithLinkedIn()
     {
+        $userType = $this->getType("user");
+
         $di = $this->getDI();
+
         $config = $di->get('config')->pup->connectors->linkedIn->toArray();
         $config['callback_url'] = $config['callback_url'] . 'user/loginWithLinkedIn';
         $li = new LinkedInConnector($config);
@@ -196,7 +224,7 @@ class Auth extends Component
             preg_match('#id=\d+#', $info['siteStandardProfileRequest']['url'], $matches);
             $linkedInId = str_replace("id=", "", $matches[0]);
 
-            $user = User::findFirst("email='$email' OR linkedin_id='$linkedInId'");
+            $user = $userType::findFirst("email='$email' OR linkedin_id='$linkedInId'");
 
             if ($user) {
                 $this->checkUserFlags($user);
@@ -213,7 +241,7 @@ class Auth extends Component
             } else {
                 $password = $this->generatePassword();
 
-                $user = new User();
+                $user = new $userType;
                 $user->setDI($di);
                 $user->setEmail($email);
                 $user->setPassword($di->get('security')->hash($password));
@@ -260,6 +288,8 @@ class Auth extends Component
      */
     public function loginWithTwitter()
     {
+        $userType = $this->getType("user");
+
         $di = $this->getDI();
         $pupRedirect = $di->get('config')->pup->redirect;
         $oauth = $this->session->get('twitterOauth');
@@ -288,7 +318,7 @@ class Auth extends Component
                     if ($code == 200) {
                         $response = json_decode($twitter->response['response'], true);
                         $twitterId = $response['id'];
-                        $user = User::findFirst("twitter_id='$twitterId'");
+                        $user = $userType::findFirst("twitter_id='$twitterId'");
 
                         if ($user) {
                             $this->checkUserFlags($user);
@@ -299,7 +329,7 @@ class Auth extends Component
                         } else {
                             $password = $this->generatePassword();
                             $email = $response['screen_name'] . rand(100000, 999999) . '@domain.tld'; // Twitter does not prived user's email
-                            $user = new User();
+                            $user = new $userType;
                             $user->setDI($di);
                             $user->setEmail($email);
                             $user->setPassword($di->get('security')->hash($password));
@@ -340,20 +370,9 @@ class Auth extends Component
 
     public function loginWithGoogle()
     {
-        $di = $this->getDI();
+        $userType = $this->getType("user");
 
-        //test setting the di to the model
-//        $blaa = new User();
-//        $blaa->setName("blaa");
-//        $blaa->setPassword($this->security->hash("dontknow"));
-//        $blaa->setEmail("blaa@blaa.com");
-//        $blaa->setActive(1);
-//        $blaa->setBanned(0);
-//        $blaa->setSuspended(0);
-//        $blaa->setGroupId(2);
-//        $blaa->setMustChangePassword(0);
-//        $blaa->setDI($di);
-//        $blaa->create();
+        $di = $this->getDI();
 
         $config = $di->get('config')->pup->connectors->google->toArray();
 
@@ -370,7 +389,9 @@ class Auth extends Component
             $gplusId = $response['userinfo']['id'];
             $email = $response['userinfo']['email'];
             $name = $response['userinfo']['name'];
-            $user = User::findFirst("gplus_id='$gplusId' OR email = '$email'");
+
+            $user = call_user_func_array(array($this->_modelConfig["user"], "findFirst"), array("gplus_id='$gplusId' OR email = '$email'"));
+//            $user = static::$userType::findFirst("gplus_id='$gplusId' OR email = '$email'");
 
             if ($user) {
                 $this->checkUserFlags($user);
@@ -389,8 +410,8 @@ class Auth extends Component
             } else {
                 $password = $this->generatePassword();
 
-                $user = new User();
-                $user->setDI($di);// either it crashes apache and won't save!
+                $user = new $userType;
+                $user->setDI($di); // either it crashes apache and won't save!
                 $user->setEmail($email);
                 $user->setPassword($di->get('security')->hash($password));
                 $user->setGplusId($gplusId);
@@ -426,8 +447,9 @@ class Auth extends Component
      */
     public function saveSuccessLogin($user)
     {
+        $successLoginType = $this->getType("userSuccessLogins");
         $di = $this->getDI();
-        $successLogin = new UserSuccessLogins();
+        $successLogin = new $successLoginType;
         $successLogin->setDI($di);
         $successLogin->setUserId($user->getId());
         $successLogin->setIpAddress($this->request->getClientAddress());
@@ -447,20 +469,22 @@ class Auth extends Component
      */
     public function registerUserThrottling($user_id)
     {
+        $failedLoginType = $this->getType("userFailedLogins");
         $di = $this->getDI();
-        $failedLogin = new UserFailedLogins();
+        $failedLogin = new $failedLoginType;
         $failedLogin->setDI($di);
         $failedLogin->setUserId($user_id == null ? new \Phalcon\Db\RawValue('NULL') : $user_id);
         $failedLogin->setIpAddress($this->request->getClientAddress());
         $failedLogin->setAttempted(time());
         $failedLogin->save();
 
-        $attempts = UserFailedLogins::count(array(
-            'ip_address = ?0 AND attempted >= ?1',
-            'bind' => array(
-                $this->request->getClientAddress(),
-                time() - 3600 * 6
-            )
+        $attempts = call_user_func_array(array($failedLoginType, "count"), array(
+            array(
+                'ip_address = ?0 AND attempted >= ?1',
+                'bind' => array(
+                    $this->request->getClientAddress(),
+                    time() - 3600 * 6
+                ))
         ));
 
         switch ($attempts) {
@@ -484,23 +508,35 @@ class Auth extends Component
      *
      * @param Phalcon\UserPlugin\Models\User\User $user
      */
-    public function createRememberEnviroment(User $user)
+    public function createRememberEnviroment($user)
     {
-        $di = $this->getDI();
-        $user_agent = $this->request->getUserAgent();
-        $token = md5($user->getEmail() . $user->getPassword() . $user_agent);
+        $userType = $this->getType("user");
 
-        $remember = new UserRememberTokens();
-        $remember->setDI($di);
-        $remember->setUserId($user->getId());
-        $remember->setToken($token);
-        $remember->setUserAgent($user_agent);
-        $remember->setCreatedAt(time());
+        $type = gettype($user);
 
-        if ($remember->save() != false) {
-            $expire = time() + 86400 * 30;
-            $this->cookies->set('RMU', $user->getId(), $expire);
-            $this->cookies->set('RMT', $token, $expire);
+        if ($type == gettype($userType)) {
+
+            $rememberType = $this->getType("userRememberTokens");
+
+            $di = $this->getDI();
+            $user_agent = $this->request->getUserAgent();
+            $token = md5($user->getEmail() . $user->getPassword() . $user_agent);
+
+            $remember = new $rememberType;
+            $remember->setDI($di);
+            $remember->setUserId($user->getId());
+            $remember->setToken($token);
+            $remember->setUserAgent($user_agent);
+            $remember->setCreatedAt(time());
+
+            if ($remember->save() != false) {
+                $expire = time() + 86400 * 30;
+                $this->cookies->set('RMU', $user->getId(), $expire);
+                $this->cookies->set('RMT', $token, $expire);
+            }
+        }
+        else {
+            throw new \InvalidArgumentException("user");
         }
     }
 
@@ -521,10 +557,13 @@ class Auth extends Component
      */
     public function loginWithRememberMe($redirect = true)
     {
+        $userType = $this->getType("user");
+        $rememberType = $this->getType("userRememberTokens");
+
         $userId = $this->cookies->get('RMU')->getValue();
         $cookieToken = $this->cookies->get('RMT')->getValue();
 
-        $user = User::findFirstById($userId);
+        $user = call_user_func_array(array($userType, "findFirstById"), array($userId));
 
         $pupRedirect = $this->getDI()->get('config')->pup->redirect;
 
@@ -534,9 +573,11 @@ class Auth extends Component
 
             if ($cookieToken == $token) {
 
-                $remember = UserRememberTokens::findFirst(array(
-                    'user_id = ?0 AND token = ?1',
-                    'bind' => array($user->getId(), $token)
+                $remember = call_user_func_array(array($rememberType, "findFirst"), array(
+                    array(
+                        'user_id = ?0 AND token = ?1',
+                        'bind' => array($user->getId(), $token)
+                    )
                 ));
 
                 if ($remember) {
@@ -582,21 +623,30 @@ class Auth extends Component
     /**
      * Checks if the user is banned/inactive/suspended
      *
-     * @param Phalcon\UserPlugin\Models\User\User $user
+     * @param $user
      */
-    public function checkUserFlags(User $user)
+    public function checkUserFlags($user)
     {
-        if (false === $user->isActive()) {
-            throw new Exception('The user is inactive');
+        $userType = $this->getType("user");
+
+        $type = gettype($user);
+
+        if ($type == gettype($userType)) {
+            if (false === $user->isActive()) {
+                throw new Exception('The user is inactive');
+            }
+
+            if (true === $user->isBanned()) {
+                throw new Exception('The user is banned');
+            }
+
+            if (true === $user->isSuspended()) {
+                throw new Exception('The user is suspended');
+            }
+        } else {
+            throw new \InvalidArgumentException("user");
         }
 
-        if (true === $user->isBanned()) {
-            throw new Exception('The user is banned');
-        }
-
-        if (true === $user->isSuspended()) {
-            throw new Exception('The user is suspended');
-        }
     }
 
     /**
@@ -665,7 +715,9 @@ class Auth extends Component
      */
     public function authUserById($id)
     {
-        $user = User::findFirstById($id);
+        $userType = $this->getType("user");
+
+        $user = $userType::findFirstById($id);
         if ($user == false) {
             throw new Exception('The user does not exist');
         }
@@ -683,10 +735,12 @@ class Auth extends Component
      */
     public function getUser()
     {
+        $userType = $this->getType("user");
+
         $identity = $this->session->get('auth-identity');
 
         if (isset($identity['id'])) {
-            $user = User::findFirstById($identity['id']);
+            $user = $userType::findFirstById($identity['id']);
             if ($user == false) {
                 throw new Exception('The user does not exist');
             }
