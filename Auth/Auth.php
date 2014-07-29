@@ -10,8 +10,7 @@ use Phalcon\UserPlugin\Models\User\UserFailedLogins;
 use Phalcon\UserPlugin\Models\User\UserRememberTokens;
 use Phalcon\UserPlugin\Models\User\UserSuccessLogins;
 //use Phalcon\UserPlugin\Repository\User\UserRepository as User;
-use Phalcon\UserPlugin\Models\User\User as User;
-
+use Phalcon\UserPlugin\Models\User\User;
 /**
  * Phalcon\UserPlugin\Auth\Auth
  *
@@ -65,7 +64,7 @@ class Auth extends Component
             $st_identity['profile_picture'] = $user->profile->getPicture();
         }
 
-        $this->di->get('session')->set('auth-identity', $st_identity);
+        $this->session->set('auth-identity', $st_identity);
     }
 
     /**
@@ -147,6 +146,7 @@ class Auth extends Component
                 $password = $this->generatePassword();
 
                 $user = new User();
+                $user->setDI($di);
                 $user->setEmail($email);
                 $user->setPassword($di->get('security')->hash($password));
                 $user->setFacebookId($facebookUserProfile['id']);
@@ -184,12 +184,12 @@ class Auth extends Component
         $config['callback_url'] = $config['callback_url'] . 'user/loginWithLinkedIn';
         $li = new LinkedInConnector($config);
 
-        $token = $this->di->get('session')->get('linkedIn_token');
-        $token_expires = $this->di->get('session')->get('linkedIn_token_expires_on', 0);
+        $token = $this->session->get('linkedIn_token');
+        $token_expires = $this->session->get('linkedIn_token_expires_on', 0);
 
         if ($token && $token_expires > time()) {
             $pupRedirect = $di->get('config')->pup->redirect;
-            $li->setAccessToken($this->di->get('session')->get('linkedIn_token'));
+            $li->setAccessToken($this->session->get('linkedIn_token'));
             $email = $li->get('/people/~/email-address');
             $info = $li->get('/people/~');
 
@@ -214,6 +214,7 @@ class Auth extends Component
                 $password = $this->generatePassword();
 
                 $user = new User();
+                $user->setDI($di);
                 $user->setEmail($email);
                 $user->setPassword($di->get('security')->hash($password));
                 $user->setLinkedinId($linkedInId);
@@ -243,8 +244,8 @@ class Auth extends Component
             if ($this->request->get('code')) {
                 $token = $li->getAccessToken($this->request->get('code'));
                 $token_expires = $li->getAccessTokenExpiration();
-                $this->di->get('session')->set('linkedIn_token', $token);
-                $this->di->get('session')->set('linkedIn_token_expires_on', time() + $token_expires);
+                $this->session->set('linkedIn_token', $token);
+                $this->session->set('linkedIn_token_expires_on', time() + $token_expires);
             }
         }
 
@@ -261,7 +262,7 @@ class Auth extends Component
     {
         $di = $this->getDI();
         $pupRedirect = $di->get('config')->pup->redirect;
-        $oauth = $this->di->get('session')->get('twitterOauth');
+        $oauth = $this->session->get('twitterOauth');
         $config = $di->get('config')->pup->connectors->twitter->toArray();
         $config = array_merge($config, array('token' => $oauth['token'], 'secret' => $oauth['secret']));
 
@@ -299,6 +300,7 @@ class Auth extends Component
                             $password = $this->generatePassword();
                             $email = $response['screen_name'] . rand(100000, 999999) . '@domain.tld'; // Twitter does not prived user's email
                             $user = new User();
+                            $user->setDI($di);
                             $user->setEmail($email);
                             $user->setPassword($di->get('security')->hash($password));
                             $user->setTwitterId($response['id']);
@@ -339,6 +341,20 @@ class Auth extends Component
     public function loginWithGoogle()
     {
         $di = $this->getDI();
+
+        //test setting the di to the model
+//        $blaa = new User();
+//        $blaa->setName("blaa");
+//        $blaa->setPassword($this->security->hash("dontknow"));
+//        $blaa->setEmail("blaa@blaa.com");
+//        $blaa->setActive(1);
+//        $blaa->setBanned(0);
+//        $blaa->setSuspended(0);
+//        $blaa->setGroupId(2);
+//        $blaa->setMustChangePassword(0);
+//        $blaa->setDI($di);
+//        $blaa->create();
+
         $config = $di->get('config')->pup->connectors->google->toArray();
 
         $pupRedirect = $di->get('config')->pup->redirect;
@@ -374,6 +390,7 @@ class Auth extends Component
                 $password = $this->generatePassword();
 
                 $user = new User();
+                $user->setDI($di);// either it crashes apache and won't save!
                 $user->setEmail($email);
                 $user->setPassword($di->get('security')->hash($password));
                 $user->setGplusId($gplusId);
@@ -385,7 +402,7 @@ class Auth extends Component
                 $user->setSuspended(0);
                 $user->setActive(1);
 
-                if (true == $user->save()) {
+                if (true == $user->create()) {
                     $this->setIdentity($user);
                     $this->saveSuccessLogin($user);
 
@@ -409,7 +426,9 @@ class Auth extends Component
      */
     public function saveSuccessLogin($user)
     {
+        $di = $this->getDI();
         $successLogin = new UserSuccessLogins();
+        $successLogin->setDI($di);
         $successLogin->setUserId($user->getId());
         $successLogin->setIpAddress($this->request->getClientAddress());
         $successLogin->setUserAgent($this->request->getUserAgent());
@@ -428,7 +447,9 @@ class Auth extends Component
      */
     public function registerUserThrottling($user_id)
     {
+        $di = $this->getDI();
         $failedLogin = new UserFailedLogins();
+        $failedLogin->setDI($di);
         $failedLogin->setUserId($user_id == null ? new \Phalcon\Db\RawValue('NULL') : $user_id);
         $failedLogin->setIpAddress($this->request->getClientAddress());
         $failedLogin->setAttempted(time());
@@ -465,10 +486,12 @@ class Auth extends Component
      */
     public function createRememberEnviroment(User $user)
     {
+        $di = $this->getDI();
         $user_agent = $this->request->getUserAgent();
         $token = md5($user->getEmail() . $user->getPassword() . $user_agent);
 
         $remember = new UserRememberTokens();
+        $remember->setDI($di);
         $remember->setUserId($user->getId());
         $remember->setToken($token);
         $remember->setUserAgent($user_agent);
@@ -583,7 +606,7 @@ class Auth extends Component
      */
     public function getIdentity()
     {
-        return $this->di->get('session')->get('auth-identity');
+        return $this->session->get('auth-identity');
     }
 
     /**
@@ -593,7 +616,7 @@ class Auth extends Component
      */
     public function getUserName()
     {
-        $identity = $this->di->get('session')->get('auth-identity');
+        $identity = $this->session->get('auth-identity');
 
         return isset($identity['name']) ? $identity['name'] : false;
     }
@@ -605,7 +628,7 @@ class Auth extends Component
      */
     public function getUserId()
     {
-        $identity = $this->di->get('session')->get('auth-identity');
+        $identity = $this->session->get('auth-identity');
 
         return isset($identity['id']) ? $identity['id'] : false;
     }
@@ -626,13 +649,13 @@ class Auth extends Component
             $this->cookies->get('RMT')->delete();
         }
 
-        $this->di->get('session')->remove('auth-identity');
-        $this->di->get('session')->remove('fb_' . $fbAppId . '_code');
-        $this->di->get('session')->remove('fb_' . $fbAppId . '_access_token');
-        $this->di->get('session')->remove('fb_' . $fbAppId . '_user_id');
-        $this->di->get('session')->remove('googleToken');
-        $this->di->get('session')->remove('linkedIn_token');
-        $this->di->get('session')->remove('linkedIn_token_expires_on');
+        $this->session->remove('auth-identity');
+        $this->session->remove('fb_' . $fbAppId . '_code');
+        $this->session->remove('fb_' . $fbAppId . '_access_token');
+        $this->session->remove('fb_' . $fbAppId . '_user_id');
+        $this->session->remove('googleToken');
+        $this->session->remove('linkedIn_token');
+        $this->session->remove('linkedIn_token_expires_on');
     }
 
     /**
@@ -660,7 +683,7 @@ class Auth extends Component
      */
     public function getUser()
     {
-        $identity = $this->di->get('session')->get('auth-identity');
+        $identity = $this->session->get('auth-identity');
 
         if (isset($identity['id'])) {
             $user = User::findFirstById($identity['id']);

@@ -13,10 +13,10 @@ class GoogleConnector
 {
     private $config;
 
-    /*private $scopes = array(
-        'https://www.googleapis.com/auth/plus.profile.emails.read ',
-        'https://www.googleapis.com/auth/plus.login'
-    );*/
+    private $scopes = array(
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/userinfo.profile'
+    );
 
     final public function __construct(array $config)
     {
@@ -48,14 +48,10 @@ class GoogleConnector
         }
 
         if ($client->getAccessToken()) {
-            try{
-                $userinfo = $oauth2->userinfo->get();
-                $session->set('googleToken', $client->getAccessToken());
+            $userinfo = $oauth2->userinfo->get();
+            $session->set('googleToken', $client->getAccessToken());
 
-                return array('status' => 1, 'userinfo' => $userinfo);
-            } catch(\Exception $ex){
-                $session->remove('googleToken');
-            }
+            return array('status' => 1, 'userinfo' => $userinfo);
         } else {
             $authUrl = $client->createAuthUrl();
 
@@ -66,7 +62,7 @@ class GoogleConnector
     /**
      * Get client
      *
-     * @return \Google_Client
+     * @return \GoogleApi\Client
      */
     public function getClient()
     {
@@ -83,7 +79,7 @@ class GoogleConnector
         $client->setClientId($this->config['client_id']);
         $client->setClientSecret($this->config['client_secret']);
         $client->setRedirectUri($this->config['redirect_uri']);
-        //$client->setDeveloperKey($this->config['developer_key']);
+        $client->setDeveloperKey($this->config['developer_key']);
 
         return $client;
     }
