@@ -1,10 +1,9 @@
 <?php
 namespace Phalcon\UserPlugin\Plugin;
 
-use Phalcon\Events\Event,
-Phalcon\Mvc\Dispatcher,
-Phalcon\Mvc\User\Plugin;
-
+use Phalcon\Events\Event;
+use Phalcon\Mvc\Dispatcher;
+use Phalcon\Mvc\User\Plugin;
 use Phalcon\UserPlugin\Exception\UserPluginException as Exception;
 
 /**
@@ -24,11 +23,11 @@ class Security extends Plugin
     /**
      * beforeDispatchLoop
      *
-     * @param  Event                           $event
-     * @param  Dispatcher                      $dispatcher
+     * @param  Event $event
+     * @param  Dispatcher $dispatcher
      * @return \Phalcon\Http\ResponseInterface
-    */
-    public function beforeDispatchLoop(Event $event, Dispatcher $dispatcher)
+     */
+    public function beforeExecuteRoute(Event $event, Dispatcher $dispatcher)
     {
         $config = $dispatcher->getDI()->get('config');
         $pupConfig = $this->getConfigStructure($config);
@@ -38,7 +37,7 @@ class Security extends Plugin
         }
 
         if ($this->auth->isUserSignedIn()) {
-            $actionName     = $dispatcher->getActionName();
+            $actionName = $dispatcher->getActionName();
             $controllerName = $dispatcher->getControllerName();
 
             if ($controllerName == 'user' && $actionName == 'login') {
@@ -53,6 +52,7 @@ class Security extends Plugin
         if (true === $needsIdentity) {
             if (!is_array($identity)) {
                 $this->flash->notice('Private area. Please login.');
+
                 $this->view->disable();
                 return $this->response->redirect($config->pup->redirect->failure)->send();
             }
@@ -64,16 +64,17 @@ class Security extends Plugin
     /**
      * Check if the controller / action needs identity
      *
-     * @param  array      $config
+     * @param  array $config
      * @param  Dispatcher $dispatcher
      * @return boolean
      */
     private function needsIdentity($config, Dispatcher $dispatcher)
     {
-        $actionName     = $dispatcher->getActionName();
+        $actionName = $dispatcher->getActionName();
         $controllerName = $dispatcher->getControllerName();
 
         if ($config['type'] == 'public') { // all except ..
+
             return $this->checkPublicResources($config['resources'], $actionName, $controllerName);
         } else {
             return $this->checkPrivateResources($config['resources'], $actionName, $controllerName);
@@ -85,9 +86,9 @@ class Security extends Plugin
     /**
      * Check for public resources
      *
-     * @param  array   $resources
-     * @param  string  $actionName
-     * @param  string  $controllerName
+     * @param  array $resources
+     * @param  string $actionName
+     * @param  string $controllerName
      * @return boolean
      */
     private function checkPublicResources($resources, $actionName, $controllerName)
@@ -112,9 +113,9 @@ class Security extends Plugin
     /**
      * Check for private resources
      *
-     * @param  array   $resources
-     * @param  string  $actionName
-     * @param  string  $controllerName
+     * @param  array $resources
+     * @param  string $actionName
+     * @param  string $controllerName
      * @return boolean
      */
     private function checkPrivateResources($resources, $actionName, $controllerName)

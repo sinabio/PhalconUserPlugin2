@@ -404,7 +404,7 @@ class User extends \Phalcon\Mvc\Model
      */
     public function setBanned($banned)
     {
-        $this->banned = (bool) $banned;
+        $this->banned = $banned;
 
         return $this;
     }
@@ -417,7 +417,7 @@ class User extends \Phalcon\Mvc\Model
      */
     public function setSuspended($suspended)
     {
-        $this->suspended = (bool) $suspended;
+        $this->suspended = $suspended;
 
         return $this;
     }
@@ -430,7 +430,7 @@ class User extends \Phalcon\Mvc\Model
      */
     public function setActive($active)
     {
-        $this->active = (bool) $active;
+        $this->active = $active;
 
         return $this;
     }
