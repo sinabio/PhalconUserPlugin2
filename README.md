@@ -1,6 +1,7 @@
-# Phalcon User Plugin 2 by Mighty-Code
+# Phalcon User Plugin 2 by Mighty-Code NOT WORKING yet
 
 * [About](#about)
+* [TODO](#todo)
 * [Features](#features)
 * [Installation](#installation)
 * [Plug it](#plug-it)
@@ -8,12 +9,16 @@
 * [Example controller](#example-controller)
 * [Known issues](#known-issues)
 * [Examples](#examples)
-* [TODO](#todo)
 
 ### <a id="about"></a>About
 
 It is a plugin based on Vokuro ACL idea. This is an alpha version and i do not recommend you to use it in 
 a production environment.
+
+### <a id="todo"></a>TODO
+- correct password reset function
+- Test everything
+- Implement CRUD templates for ACl, UserManagement, etc
 
 ### <a id="features"></a>Features
 
@@ -26,8 +31,6 @@ a production environment.
 - Protect different areas from your website, where a user must be loged in, in order to have access
 - Protect different actions, based on the ACL list for each user
 - User profile: birth date, birth location, current location, profile picture
-- Locations - save locations using google API - see Wiki for examples
-- Simple notifications system
 
 ### <a id="installation"></a>Installation
 
@@ -35,7 +38,7 @@ The recommended installation is via compososer. Just add the following line to y
 
 ```json
 {
-    "crada/phalcon-user-plugin": "@dev"
+    "mighty-code/phalcon-user-plugin-2": "dev-master"
 }
 ```
 
@@ -45,46 +48,7 @@ $ php composer.phar update
 
 ### <a id="plug-it"></a>Plug it
 
-Add the following lines where to your events manager:
-
-```php
-
-    $security = new \Phalcon\UserPlugin\Plugin\Security($di);
-    $eventsManager->attach('dispatch', $security);
-
-```
-
-Full example code:
-
-```php
-
-    $di['dispatcher'] = function() use ($di) {
-        $eventsManager = $di->getShared('eventsManager');
-        $security = new \Phalcon\UserPlugin\Plugin\Security($di);
-        $eventsManager->attach('dispatch', $security);
-
-        $dispatcher = new Dispatcher();
-        $dispatcher->setEventsManager($eventsManager);
-        return $dispatcher;
-    };
-    
-```
-
-Register Auth, Mail and Acl services
-
-```php
-    $di['auth'] = function(){
-        return new \Phalcon\UserPlugin\Auth\Auth();
-    };
-
-    $di['acl'] = function() {
-        return new \Phalcon\UserPlugin\Acl\Acl();
-    };
-
-    $di['mail'] = function() {
-        return new \Phalcon\UserPlugin\Mail\Mail();
-    };
-```
+* Not aviable yet!
 
 ### <a id="configuration"></a>Configuration
 
@@ -93,131 +57,7 @@ you to set up the configuration separately for each module.
 
 #### Configuration examples
 
-In the exampe bellow, you will treat your website as public, EXCEPT the actions ACCOUNT and PROFILE from the USER 
-controller:  
-
-```php
-
-    'pup' => array(
-        'redirect' => array(
-            'success' => 'user/profile',
-            'failure' => 'user/login'
-        ),    
-        'resources' => array(
-            'type' => 'public',
-            'resources' => array(
-                '*' => array( // All except
-                    'user' => array('account', 'profile')
-                ),
-            )
-         )
-    )
-
-```
-
-In the exampe bellow, the ONLY PUBLIC resurces are the actions LOGIN and REGISTER from the USER controller:  
-
-```php
-
-    'pup' => array(
-        'redirect' => array(
-            'success' => 'user/profile',
-            'failure' => 'user/login'
-        ),    
-        'resources' => array(
-            'type' => 'public',
-            'resources' => array(
-                'user' => array('login', 'register')
-            )
-        )
-    )
-
-```
-
-In the exampe bellow, you will treat your website as private, EXCEPT the actions LOGIN and REGISTER from the USER 
-controller:    
-
-```php
-
-    'pup' => array(
-        'redirect' => array(
-            'success' => 'user/profile',
-            'failure' => 'user/login'
-        ),    
-        'resources' => array(
-            'type' => 'private',
-            'resources' => array(
-                '*' => array( // All except
-                    'user' => array('login', 'register')
-                ),
-            )
-         )
-    )
-
-```
-
-In the exampe bellow, the ONLY PRIVATE resurces are the actions ACCOUNT and PROFILE from the USER controller:  
-
-```php
-
-    'pup' => array(
-        'redirect' => array(
-            'success' => 'user/profile',
-            'failure' => 'user/login'
-        ),    
-        'resources' => array(
-            'type' => 'private',
-            'resources' => array(
-                'user' => array('account', 'profile')
-            )
-        )
-    )
-
-```
-
-Configuration example with connectors:
-
-```php
-
-    'pup' => array( // phalcon-user-plugin
-        'redirect' => array(
-            'success' => 'user/profile',
-            'failure' => 'user/login'
-        ),    
-        'resources' => array(
-            'type' => 'public',
-            'resources' => array(
-                '*' => array( // All except
-                    'user' => array('account', 'profile')
-                ),
-            )
-         ),
-         'connectors' => array(
-             'facebook' => array(
-                 'appId' => 'YOUR_FACEBOOK_APP_ID',
-                 'secret' => 'YOUR_FACEBOOK_APP_SECRET'
-             ),
-             'linkedIn' => array(
-                 'api_key' => 'YOUR_LINKED_IN_APP_ID',
-                 'api_secret' => 'YOUR_LINKED_IN_APP_SECRET',
-                 'callback_url' => 'CALLBACK_URL'
-             ),  
-             'twitter' => array(
-                 'consumer_key' => 'TWITTER_CONSUMER_KEY',
-                 'consumer_secret' => 'TWITTER_CONSUMER_SECRET',
-                 'user_agent' => 'YOUR_APPLICATION_NAME', // Leave empty if you don't want to set it
-             ),    
-             'google' => array(
-                 'application_name' => 'YOUR_APPLICATION_NAME',
-                 'client_id' => 'YOUR_CLIENT_ID',
-                 'client_secret' => 'YOUR_CLIENT_SECRET',
-                 'developer_key' => 'YOUR_DEVELOPER_KEY',
-                 'redirect_uri' => 'YOUR_REDIRECT_URI'
-             ),             
-         )
-    )
-
-```
+* Released when plugin is running correctly
 
 ### <a id="example-controller"></a>Example controller
 
@@ -317,8 +157,7 @@ class UserController extends Controller
 
 ### <a id="examples"></a>Examples
 
-* [Notifications](https://github.com/calinrada/PhalconUserPlugin/wiki/Notifications)
 
-### <a id="todo"></a>TODO
-- Implement CRUD templates for ACl, UserManagement, etc
+
+
 
