@@ -40,15 +40,22 @@ class GoogleConnector
             return array('status' => 0, 'redirect' => filter_var($redirect, FILTER_SANITIZE_URL));
         }
 
+        if($client->isAccessTokenExpired()){
+        }
+
         if ($session->has('googleToken')) {
             $client->setAccessToken($session->get('googleToken'));
         }
 
         if ($client->getAccessToken()) {
-            $userinfo = $oauth2->userinfo->get();
-            $session->set('googleToken', $client->getAccessToken());
+            try{
+                $userinfo = $oauth2->userinfo->get();
+                $session->set('googleToken', $client->getAccessToken());
 
-            return array('status' => 1, 'userinfo' => $userinfo);
+                return array('status' => 1, 'userinfo' => $userinfo);
+            } catch(\Exception $ex){
+                $session->remove('googleToken');
+            }
         } else {
             $authUrl = $client->createAuthUrl();
 
