@@ -1,12 +1,12 @@
 <?php
 namespace Phalcon\UserPlugin\Acl;
 
-use Phalcon\Mvc\User\Component,
-Phalcon\Acl\Adapter\Memory as AclAdapter,
-Phalcon\Acl\Role as AclRole,
-Phalcon\Acl\Resource as AclResource,
-Phalcon\UserPlugin\Models\User\User,
-Phalcon\UserPlugin\Models\User\UserGroups;
+use Phalcon\Acl\Adapter\Memory as AclAdapter;
+use Phalcon\Acl\Resource as AclResource;
+use Phalcon\Acl\Role as AclRole;
+use Phalcon\Mvc\User\Component;
+use Phalcon\UserPlugin\Interfaces\UserInterface;
+use Phalcon\UserPlugin\Interfaces\UserGroupsInterface;
 
 /**
  * Phalcon\UserPlugin\Acl\Acl
@@ -35,9 +35,9 @@ class Acl extends Component
     /**
      * Checks if a controller is private or not
      *
-     * @param  string  $controllerName
+     * @param  string $controllerName
      * @return boolean
-    */
+     */
     public function isPrivate($controllerName)
     {
         return isset($this->_privateResources[$controllerName]);
@@ -46,9 +46,9 @@ class Acl extends Component
     /**
      * Checks if the current group is allowed to access a resource
      *
-     * @param  string  $group
-     * @param  string  $controller
-     * @param  string  $action
+     * @param  string $group
+     * @param  string $controller
+     * @param  string $action
      * @return boolean
      */
     public function isAllowed($group, $controller, $action)
@@ -103,7 +103,7 @@ class Acl extends Component
      * @param  Profiles $profile
      * @return array
      */
-    public function getPermissions(Group $group)
+    public function getPermissions(UserGroupsInterface $group)
     {
         $permissions = array();
         foreach ($group->getPermissions() as $permission) {
@@ -169,7 +169,6 @@ class Acl extends Component
 
             //Always grant these permissions
             $acl->allow($profile->name, 'users', 'changePassword');
-
         }
 
         if (is_writable(__DIR__ . $this->_filePath)) {

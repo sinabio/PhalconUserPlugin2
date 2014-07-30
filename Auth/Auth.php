@@ -6,10 +6,8 @@ use Phalcon\UserPlugin\Connectors\FacebookConnector;
 use Phalcon\UserPlugin\Connectors\GoogleConnector;
 use Phalcon\UserPlugin\Connectors\LinkedInConnector;
 use Phalcon\UserPlugin\Connectors\TwitterConnector;
-use Phalcon\UserPlugin\Models\User\User;
-use Phalcon\UserPlugin\Models\User\UserFailedLogins;
-use Phalcon\UserPlugin\Models\User\UserRememberTokens;
-use Phalcon\UserPlugin\Models\User\UserSuccessLogins;
+use Phalcon\UserPlugin\Interfaces\UserInterface;
+
 
 //use Phalcon\UserPlugin\Repository\User\UserRepository as User;
 
@@ -445,7 +443,7 @@ class Auth extends Component
      *
      * @param Phalcon\UserPlugin\Models\User\User $user
      */
-    public function saveSuccessLogin($user)
+    public function saveSuccessLogin(UserInterface $user)
     {
         $successLoginType = $this->getType("userSuccessLogins");
         $di = $this->getDI();
@@ -508,35 +506,25 @@ class Auth extends Component
      *
      * @param Phalcon\UserPlugin\Models\User\User $user
      */
-    public function createRememberEnviroment($user)
+    public function createRememberEnviroment(UserInterface $user)
     {
-        $userType = $this->getType("user");
+        $rememberType = $this->getType("userRememberTokens");
 
-        $type = gettype($user);
+        $di = $this->getDI();
+        $user_agent = $this->request->getUserAgent();
+        $token = md5($user->getEmail() . $user->getPassword() . $user_agent);
 
-        if ($type == gettype($userType)) {
+        $remember = new $rememberType;
+        $remember->setDI($di);
+        $remember->setUserId($user->getId());
+        $remember->setToken($token);
+        $remember->setUserAgent($user_agent);
+        $remember->setCreatedAt(time());
 
-            $rememberType = $this->getType("userRememberTokens");
-
-            $di = $this->getDI();
-            $user_agent = $this->request->getUserAgent();
-            $token = md5($user->getEmail() . $user->getPassword() . $user_agent);
-
-            $remember = new $rememberType;
-            $remember->setDI($di);
-            $remember->setUserId($user->getId());
-            $remember->setToken($token);
-            $remember->setUserAgent($user_agent);
-            $remember->setCreatedAt(time());
-
-            if ($remember->save() != false) {
-                $expire = time() + 86400 * 30;
-                $this->cookies->set('RMU', $user->getId(), $expire);
-                $this->cookies->set('RMT', $token, $expire);
-            }
-        }
-        else {
-            throw new \InvalidArgumentException("user");
+        if ($remember->save() != false) {
+            $expire = time() + 86400 * 30;
+            $this->cookies->set('RMU', $user->getId(), $expire);
+            $this->cookies->set('RMT', $token, $expire);
         }
     }
 
@@ -625,28 +613,19 @@ class Auth extends Component
      *
      * @param $user
      */
-    public function checkUserFlags($user)
+    public function checkUserFlags(UserInferface $user)
     {
-        $userType = $this->getType("user");
-
-        $type = gettype($user);
-
-        if ($type == gettype($userType)) {
-            if (false === $user->isActive()) {
-                throw new Exception('The user is inactive');
-            }
-
-            if (true === $user->isBanned()) {
-                throw new Exception('The user is banned');
-            }
-
-            if (true === $user->isSuspended()) {
-                throw new Exception('The user is suspended');
-            }
-        } else {
-            throw new \InvalidArgumentException("user");
+        if (false === $user->isActive()) {
+            throw new Exception('The user is inactive');
         }
 
+        if (true === $user->isBanned()) {
+            throw new Exception('The user is banned');
+        }
+
+        if (true === $user->isSuspended()) {
+            throw new Exception('The user is suspended');
+        }
     }
 
     /**
