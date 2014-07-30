@@ -6,26 +6,6 @@
 SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
 
---
--- Table structure for table `locations`
---
-
-DROP TABLE IF EXISTS `locations`;
-CREATE TABLE IF NOT EXISTS `locations` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `language` char(2) COLLATE utf8_bin DEFAULT NULL,
-  `formatted_address` varchar(160) COLLATE utf8_bin DEFAULT NULL,
-  `city` varchar(100) COLLATE utf8_bin DEFAULT NULL,
-  `country` varchar(100) COLLATE utf8_bin DEFAULT NULL,
-  `latitude` float(10,6) DEFAULT NULL,
-  `longitude` float(10,6) DEFAULT NULL,
-  `geo_point` point DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `city` (`city`,`country`,`formatted_address`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin AUTO_INCREMENT=7 ;
-
 -- --------------------------------------------------------
 
 --
@@ -56,6 +36,8 @@ CREATE TABLE IF NOT EXISTS `user` (
   `banned` tinyint(1) NOT NULL,
   `suspended` tinyint(1) NOT NULL,
   `active` tinyint(1) DEFAULT NULL,
+  `created_at` DATETIME NOT NULL,
+  `updated_at` DATETIME NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `facebook_id` (`facebook_id`,`facebook_name`),
   KEY `linkedin_id` (`linkedin_id`,`linkedin_name`),
@@ -116,24 +98,6 @@ CREATE TABLE IF NOT EXISTS `user_groups` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `user_notifications`
---
-
-DROP TABLE IF EXISTS `user_notifications`;
-CREATE TABLE IF NOT EXISTS `user_notifications` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` bigint(20) unsigned NOT NULL,
-  `object_id` bigint(20) NOT NULL,
-  `object_source` varchar(30) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL COMMENT 'Object source can be a table. For example, articles. Then object_id is the id from article table',
-  `content` text CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
-  `is_seen` tinyint(1) DEFAULT '0',
-  `created_at` datetime NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `user_password_changes`
 --
 
@@ -162,27 +126,6 @@ CREATE TABLE IF NOT EXISTS `user_permissions` (
   PRIMARY KEY (`id`),
   KEY `usersId` (`group_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin AUTO_INCREMENT=123 ;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `user_profile`
---
-
-DROP TABLE IF EXISTS `user_profile`;
-CREATE TABLE IF NOT EXISTS `user_profile` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` bigint(20) unsigned NOT NULL,
-  `picture` varchar(255) DEFAULT NULL,
-  `birth_date` date DEFAULT NULL,
-  `gender` tinyint(1) DEFAULT NULL COMMENT '0=male, 1=female',
-  `home_location_id` bigint(20) unsigned DEFAULT NULL,
-  `current_location_id` bigint(20) unsigned DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=5 ;
 
 -- --------------------------------------------------------
 
@@ -231,6 +174,7 @@ CREATE TABLE IF NOT EXISTS `user_success_logins` (
   `user_id` bigint(20) unsigned NOT NULL,
   `ip_address` char(15) COLLATE utf8_bin NOT NULL,
   `user_agent` varchar(255) COLLATE utf8_bin NOT NULL,
+  `created_at` DATETIME NOT NULL,
   PRIMARY KEY (`id`),
   KEY `usersId` (`user_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin AUTO_INCREMENT=238 ;
