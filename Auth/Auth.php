@@ -388,10 +388,14 @@ class Auth extends Component
             $email = $response['userinfo']['email'];
             $name = $response['userinfo']['name'];
 
+            //echo "\"".$this->_modelConfig["user"]."\"";
+
             $user = call_user_func_array(array($this->_modelConfig["user"], "findFirst"), array("gplus_id='$gplusId' OR email = '$email'"));
-//            $user = static::$userType::findFirst("gplus_id='$gplusId' OR email = '$email'");
 
             if ($user) {
+
+                echo get_class($user);
+
                 $this->checkUserFlags($user);
                 $this->setIdentity($user);
 
@@ -443,19 +447,23 @@ class Auth extends Component
      *
      * @param Phalcon\UserPlugin\Models\User\User $user
      */
-    public function saveSuccessLogin(UserInterface $user)
+    public function saveSuccessLogin($user)
     {
-        $successLoginType = $this->getType("userSuccessLogins");
-        $di = $this->getDI();
-        $successLogin = new $successLoginType;
-        $successLogin->setDI($di);
-        $successLogin->setUserId($user->getId());
-        $successLogin->setIpAddress($this->request->getClientAddress());
-        $successLogin->setUserAgent($this->request->getUserAgent());
+        if($user instanceof $user){
+            $successLoginType = $this->getType("userSuccessLogins");
+            $di = $this->getDI();
+            $successLogin = new $successLoginType;
+            $successLogin->setDI($di);
+            $successLogin->setUserId($user->getId());
+            $successLogin->setIpAddress($this->request->getClientAddress());
+            $successLogin->setUserAgent($this->request->getUserAgent());
 
-        if (!$successLogin->save()) {
-            $messages = $successLogin->getMessages();
-            throw new Exception($messages[0]);
+            if (!$successLogin->save()) {
+                $messages = $successLogin->getMessages();
+                throw new Exception($messages[0]);
+            }
+        }else{
+            throw new Exception('$user not instance of UserInterface');
         }
     }
 
@@ -506,25 +514,29 @@ class Auth extends Component
      *
      * @param Phalcon\UserPlugin\Models\User\User $user
      */
-    public function createRememberEnviroment(UserInterface $user)
+    public function createRememberEnviroment($user)
     {
-        $rememberType = $this->getType("userRememberTokens");
+        if($user instanceof $user){
+            $rememberType = $this->getType("userRememberTokens");
 
-        $di = $this->getDI();
-        $user_agent = $this->request->getUserAgent();
-        $token = md5($user->getEmail() . $user->getPassword() . $user_agent);
+            $di = $this->getDI();
+            $user_agent = $this->request->getUserAgent();
+            $token = md5($user->getEmail() . $user->getPassword() . $user_agent);
 
-        $remember = new $rememberType;
-        $remember->setDI($di);
-        $remember->setUserId($user->getId());
-        $remember->setToken($token);
-        $remember->setUserAgent($user_agent);
-        $remember->setCreatedAt(time());
+            $remember = new $rememberType;
+            $remember->setDI($di);
+            $remember->setUserId($user->getId());
+            $remember->setToken($token);
+            $remember->setUserAgent($user_agent);
+            $remember->setCreatedAt(time());
 
-        if ($remember->save() != false) {
-            $expire = time() + 86400 * 30;
-            $this->cookies->set('RMU', $user->getId(), $expire);
-            $this->cookies->set('RMT', $token, $expire);
+            if ($remember->save() != false) {
+                $expire = time() + 86400 * 30;
+                $this->cookies->set('RMU', $user->getId(), $expire);
+                $this->cookies->set('RMT', $token, $expire);
+            }
+        }else{
+                throw new Exception('$user not instance of UserInterface');
         }
     }
 
@@ -613,18 +625,22 @@ class Auth extends Component
      *
      * @param $user
      */
-    public function checkUserFlags(UserInferface $user)
+    public function checkUserFlags($user)
     {
-        if (false === $user->isActive()) {
-            throw new Exception('The user is inactive');
-        }
+        if($user instanceof $user){
+            if (false === $user->isActive()) {
+                throw new Exception('The user is inactive');
+            }
 
-        if (true === $user->isBanned()) {
-            throw new Exception('The user is banned');
-        }
+            if (true === $user->isBanned()) {
+                throw new Exception('The user is banned');
+            }
 
-        if (true === $user->isSuspended()) {
-            throw new Exception('The user is suspended');
+            if (true === $user->isSuspended()) {
+                throw new Exception('The user is suspended');
+            }
+        }else{
+            throw new Exception('$user not instance of UserInterface');
         }
     }
 
@@ -694,6 +710,7 @@ class Auth extends Component
      */
     public function authUserById($id)
     {
+        //TODO, use call_user_func_array
         $userType = $this->getType("user");
 
         $user = $userType::findFirstById($id);
@@ -714,6 +731,7 @@ class Auth extends Component
      */
     public function getUser()
     {
+        //TODO, use call_user_func_array
         $userType = $this->getType("user");
 
         $identity = $this->session->get('auth-identity');
