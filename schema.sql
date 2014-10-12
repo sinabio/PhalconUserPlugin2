@@ -95,6 +95,15 @@ CREATE TABLE IF NOT EXISTS `user_groups` (
   KEY `active` (`active`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin AUTO_INCREMENT=4 ;
 
+--
+-- Dumping data for table `profiles`
+--
+
+INSERT INTO `user_groups` (`id`, `name`, `active`) VALUES
+(1, 'Administrators', 'Y'),
+(2, 'Users', 'Y'),
+(3, 'Read-Only', 'Y');
+
 -- --------------------------------------------------------
 
 --
@@ -126,6 +135,34 @@ CREATE TABLE IF NOT EXISTS `user_permissions` (
   PRIMARY KEY (`id`),
   KEY `usersId` (`group_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin AUTO_INCREMENT=123 ;
+
+--
+-- Dumping data for table `permissions`
+--
+
+INSERT INTO `user_permissions` (`id`, `group_id`, `resource`, `action`) VALUES
+(1, 3, 'users', 'index'),
+(2, 3, 'users', 'search'),
+(3, 3, 'profiles', 'index'),
+(4, 3, 'profiles', 'search'),
+(5, 1, 'users', 'index'),
+(6, 1, 'users', 'search'),
+(7, 1, 'users', 'edit'),
+(8, 1, 'users', 'create'),
+(9, 1, 'users', 'delete'),
+(10, 1, 'users', 'changePassword'),
+(11, 1, 'profiles', 'index'),
+(12, 1, 'profiles', 'search'),
+(13, 1, 'profiles', 'edit'),
+(14, 1, 'profiles', 'create'),
+(15, 1, 'profiles', 'delete'),
+(16, 1, 'permissions', 'index'),
+(17, 2, 'users', 'index'),
+(18, 2, 'users', 'search'),
+(19, 2, 'users', 'edit'),
+(20, 2, 'users', 'create'),
+(21, 2, 'profiles', 'index'),
+(22, 2, 'profiles', 'search');
 
 -- --------------------------------------------------------
 
