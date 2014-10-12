@@ -1,30 +1,60 @@
 <?php
-namespace Phalcon\UserPlugin\Acl;
+namespace MightyMovies\Acl;
 
-use Phalcon\Acl\Adapter\Memory as AclAdapter;
-use Phalcon\Acl\Resource as AclResource;
-use Phalcon\Acl\Role as AclRole;
 use Phalcon\Mvc\User\Component;
-use Phalcon\UserPlugin\Interfaces\UserInterface;
-use Phalcon\UserPlugin\Interfaces\UserGroupsInterface;
+use Phalcon\Acl\Adapter\Memory as AclMemory;
+use Phalcon\Acl\Role as AclRole;
+use Phalcon\Acl\Resource as AclResource;
+use MightyMovies\Models\Profiles;
 
 /**
- * Phalcon\UserPlugin\Acl\Acl
+ * MightyMovies\Acl\Acl
  */
 class Acl extends Component
 {
-    private $_acl;
 
-    private $_filePath = '/../../cache/acl/data.txt';
+    /**
+     * The ACL Object
+     *
+     * @var \Phalcon\Acl\Adapter\Memory
+     */
+    private $acl;
 
-    private $_privateResources = array(
-        //'user' => array('index', 'search', 'edit', 'create', 'delete', 'changePassword'),
-        //'profiles' => array('index', 'search', 'edit', 'create', 'delete'),
-        //'permissions' => array('index')
-    );
+    /**
+     * The filepath of the ACL cache file from APP_DIR
+     *
+     * @var string
+     */
+    private $filePath = '/cache/acl/data.txt';
 
-    private $_actionDescriptions = array(
+    /**
+     * Define the resources that are considered "private". These controller => actions require authentication.
+     *
+     * @var array
+     */
+    private $privateResources;
+
+    /**
+     * Returns the value of field id
+     *
+     * @return integer
+     */
+    public function getPrivateResources()
+    {
+        if(!is_array($this->privateResources)){
+            $this->privateResources = require APP_DIR . "acl.php";
+        }
+        return $this->privateResources;
+    }
+
+    /**
+     * Human-readable descriptions of the actions used in {@see $privateResources}
+     *
+     * @var array
+     */
+    private $actionDescriptions = array(
         'index' => 'Access',
+        'add' => 'Add',
         'search' => 'Search',
         'create' => 'Create',
         'edit' => 'Edit',
@@ -35,25 +65,25 @@ class Acl extends Component
     /**
      * Checks if a controller is private or not
      *
-     * @param  string $controllerName
+     * @param string $controllerName
      * @return boolean
      */
     public function isPrivate($controllerName)
     {
-        return isset($this->_privateResources[$controllerName]);
+        return isset($this->privateResources[$controllerName]);
     }
 
     /**
-     * Checks if the current group is allowed to access a resource
+     * Checks if the current profile is allowed to access a resource
      *
-     * @param  string $group
-     * @param  string $controller
-     * @param  string $action
+     * @param string $profile
+     * @param string $controller
+     * @param string $action
      * @return boolean
      */
-    public function isAllowed($group, $controller, $action)
+    public function isAllowed($profile, $controller, $action)
     {
-        return $this->getAcl()->isAllowed($group, $controller, $action);
+        return $this->getAcl()->isAllowed($profile, $controller, $action);
     }
 
     /**
@@ -63,53 +93,50 @@ class Acl extends Component
      */
     public function getAcl()
     {
-        //Check if the ACL is already created
-        if (is_object($this->_acl)) {
-            return $this->_acl;
+        // Check if the ACL is already created
+        if (is_object($this->acl)) {
+            return $this->acl;
         }
 
-        //Check if the ACL is in APC
+        // Check if the ACL is in APC
         if (function_exists('apc_fetch')) {
-            $acl = apc_fetch($this->di->config->cradaUserPlugin->appId);
+            $acl = apc_fetch('mightymovies-acl');
             if (is_object($acl)) {
-                $this->_acl = $acl;
-
+                $this->acl = $acl;
                 return $acl;
             }
         }
 
-        //Check if the ACL is already generated
-        if (!file_exists(__DIR__ . $this->_filePath)) {
-            $this->_acl = $this->rebuild();
-
-            return $this->_acl;
+        // Check if the ACL is already generated
+        if (!file_exists(APP_DIR . $this->filePath)) {
+            $this->acl = $this->rebuild();
+            return $this->acl;
         }
 
-        //Get the ACL from the data file
-        $data = file_get_contents(__DIR__ . $this->_filePath);
-        $this->_acl = unserialize($data);
+        // Get the ACL from the data file
+        $data = file_get_contents(APP_DIR . $this->filePath);
+        $this->acl = unserialize($data);
 
-        //Store the ACL in APC
+        // Store the ACL in APC
         if (function_exists('apc_store')) {
-            apc_store($this->di->config->cradaUserPlugin->appId, $this->_acl);
+            apc_store('mightymovies-acl', $this->acl);
         }
 
-        return $this->_acl;
+        return $this->acl;
     }
 
     /**
-     * Returns the permissions assigned to a roup
+     * Returns the permissions assigned to a profile
      *
-     * @param  Profiles $profile
+     * @param Profiles $profile
      * @return array
      */
-    public function getPermissions(UserGroupsInterface $group)
+    public function getPermissions(Profiles $profile)
     {
         $permissions = array();
-        foreach ($group->getPermissions() as $permission) {
+        foreach ($profile->getPermissions() as $permission) {
             $permissions[$permission->resource . '.' . $permission->action] = true;
         }
-
         return $permissions;
     }
 
@@ -120,7 +147,7 @@ class Acl extends Component
      */
     public function getResources()
     {
-        return $this->_privateResources;
+        return $this->privateResources;
     }
 
     /**
@@ -131,57 +158,59 @@ class Acl extends Component
      */
     public function getActionDescription($action)
     {
-        if (isset($this->_actionDescriptions[$action])) {
-            return $this->_actionDescriptions[$action];
+        if (isset($this->actionDescriptions[$action])) {
+            return $this->actionDescriptions[$action];
         } else {
             return $action;
         }
     }
 
     /**
-     * Rebuils the access list into a file
+     * Rebuilds the access list into a file
      *
+     * @return \Phalcon\Acl\Adapter\Memory
      */
     public function rebuild()
     {
-        $acl = new AclAdapter();
+        $acl = new AclMemory();
 
         $acl->setDefaultAction(\Phalcon\Acl::DENY);
 
-        //Register roles
-        $profiles = UserGroups::find('active = 1');
+        // Register roles
+        $profiles = Profiles::find('active = "Y"');
 
         foreach ($profiles as $profile) {
             $acl->addRole(new AclRole($profile->name));
         }
 
-        foreach ($this->_privateResources as $resource => $actions) {
+        foreach ($this->privateResources as $resource => $actions) {
             $acl->addResource(new AclResource($resource), $actions);
         }
 
-        //Grant acess to private area to role Users
+        // Grant acess to private area to role Users
         foreach ($profiles as $profile) {
 
-            //Grant permissions in "permissions" model
+            // Grant permissions in "permissions" model
             foreach ($profile->getPermissions() as $permission) {
                 $acl->allow($profile->name, $permission->resource, $permission->action);
             }
 
-            //Always grant these permissions
+            // Always grant these permissions
             $acl->allow($profile->name, 'users', 'changePassword');
         }
 
-        if (is_writable(__DIR__ . $this->_filePath)) {
+        if (touch(APP_DIR . $this->filePath) && is_writable(APP_DIR . $this->filePath)) {
 
-            file_put_contents(__DIR__ . $this->_filePath, serialize($acl));
+            file_put_contents(APP_DIR . $this->filePath, serialize($acl));
 
-            //Store the ACL in APC
+            // Store the ACL in APC
             if (function_exists('apc_store')) {
-                apc_store($this->di->config->cradaUserPlugin->appId, $acl);
+                apc_store('mightymovies-acl', $acl);
             }
-
         } else {
-            $this->flash->error('The user does not have write permissions');
+            $this->flash->error(
+                'The user does not have write permissions to create the ACL list at ' . APP_DIR . $this->filePath
+            );
         }
 
         return $acl;
