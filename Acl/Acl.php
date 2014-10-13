@@ -1,5 +1,5 @@
 <?php
-namespace MightyMovies\Acl;
+namespace Phalcon\UserPlugin\Acl;
 
 use Phalcon\Mvc\User\Component;
 use Phalcon\Acl\Adapter\Memory as AclMemory;
@@ -33,6 +33,23 @@ class Acl extends Component
      * @var array
      */
     private $privateResources;
+
+    protected $_modelConfig = array();
+
+    /**
+     * Initialize Auth component
+     */
+    public function __construct()
+    {
+        $di = $this->getDI();
+        $this->_modelConfig = $di->get('config')->pup->models;
+    }
+
+    public function getType($name)
+    {
+        $userType = new $this->_modelConfig[$name];
+        return $userType;
+    }
 
     /**
      * Returns the value of field id
@@ -131,10 +148,11 @@ class Acl extends Component
      * @param Profiles $profile
      * @return array
      */
-    public function getPermissions(Profiles $profile)
+    public function getPermissions($userGroup)
     {
+        //TODO: check is a UserGroups Object
         $permissions = array();
-        foreach ($profile->getPermissions() as $permission) {
+        foreach ($userGroup->getPermissions() as $permission) {
             $permissions[$permission->resource . '.' . $permission->action] = true;
         }
         return $permissions;
@@ -172,15 +190,17 @@ class Acl extends Component
      */
     public function rebuild()
     {
+        $userGroupType = $this->getType("userGroups");
+
         $acl = new AclMemory();
 
         $acl->setDefaultAction(\Phalcon\Acl::DENY);
 
         // Register roles
-        $profiles = Profiles::find('active = "Y"');
+        $user_groups = call_user_func_array(array($userGroupType, "find"), array('active = "Y"'));
 
-        foreach ($profiles as $profile) {
-            $acl->addRole(new AclRole($profile->name));
+        foreach ($user_groups as $user_group) {
+            $acl->addRole(new AclRole($user_group->name));
         }
 
         foreach ($this->privateResources as $resource => $actions) {
@@ -188,15 +208,16 @@ class Acl extends Component
         }
 
         // Grant acess to private area to role Users
-        foreach ($profiles as $profile) {
+        foreach ($user_groups as $user_group) {
 
             // Grant permissions in "permissions" model
-            foreach ($profile->getPermissions() as $permission) {
-                $acl->allow($profile->name, $permission->resource, $permission->action);
+            foreach ($user_group->getPermissions() as $permission) {
+                $acl->allow($user_group->name, $permission->resource, $permission->action);
             }
 
             // Always grant these permissions
-            $acl->allow($profile->name, 'users', 'changePassword');
+            //TODO: Add all must have permission
+            $acl->allow($user_group->name, 'users', 'changePassword');
         }
 
         if (touch(APP_DIR . $this->filePath) && is_writable(APP_DIR . $this->filePath)) {
@@ -205,7 +226,8 @@ class Acl extends Component
 
             // Store the ACL in APC
             if (function_exists('apc_store')) {
-                apc_store('mightymovies-acl', $acl);
+                $uniqueName = md5(uniqid(rand(), true));
+                apc_store('phalconuserplugin-'. $uniqueName . '-acl', $acl);
             }
         } else {
             $this->flash->error(

@@ -32,8 +32,6 @@ class Auth extends Component
     public function getType($name)
     {
         $userType = new $this->_modelConfig[$name];
-
-
         return $userType;
     }
 
@@ -150,7 +148,14 @@ class Auth extends Component
         if ($facebookUser) {
             $pupRedirect = $di->get('config')->pup->redirect;
             $email = isset($facebookUserProfile['email']) ? $facebookUserProfile['email'] : 'a@a.com';
-            $user = $userType::findFirst(" email='$email' OR facebook_id='" . $facebookUserProfile['id'] . "' ");
+            $user = call_user_func_array(array($userType, "findFirst"), array(
+                'conditions' => "email='?1' OR facebook_id='?2'",
+                'bind' => array(
+                    1 => $email,
+                    2 => $facebookUserProfile['id']
+                )
+            ));
+            //$user = $userType::findFirst(" email='$email' OR facebook_id='" . $facebookUserProfile['id'] . "' ");
 
             if ($user) {
                 $this->checkUserFlags($user);
