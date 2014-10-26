@@ -77,13 +77,14 @@ class Auth extends Component
             'id' => $user->getId(),
             'email' => $user->getEmail(),
             'name' => $user->getName(),
+            'group' => $user->getUserGroup()->getName()
         );
 
 //        if ($user->profile) {
 //            $st_identity['profile_picture'] = $user->profile->getPicture();
 //        }
 
-        $this->session->set('auth-identity', $st_identity);
+        $this->session->set('identity', $st_identity);
     }
 
     /**
@@ -656,7 +657,7 @@ class Auth extends Component
      */
     public function getIdentity()
     {
-        return $this->session->get('auth-identity');
+        return $this->session->get('identity');
     }
 
     /**
@@ -666,9 +667,9 @@ class Auth extends Component
      */
     public function getUserName()
     {
-        $identity = $this->session->get('auth-identity');
+        $identity = $this->session->get('identity');
 
-        return isset($identity['name']) ? $identity['name'] : false;
+        return isset($identity['name']) ? $identity['name'] : "n/A";
     }
 
     /**
@@ -678,7 +679,7 @@ class Auth extends Component
      */
     public function getUserId()
     {
-        $identity = $this->session->get('auth-identity');
+        $identity = $this->session->get('identity');
 
         return isset($identity['id']) ? $identity['id'] : false;
     }
@@ -699,7 +700,7 @@ class Auth extends Component
             $this->cookies->get('RMT')->delete();
         }
 
-        $this->session->remove('auth-identity');
+        $this->session->remove('identity');
         $this->session->remove('fb_' . $fbAppId . '_code');
         $this->session->remove('fb_' . $fbAppId . '_access_token');
         $this->session->remove('fb_' . $fbAppId . '_user_id');
@@ -739,7 +740,7 @@ class Auth extends Component
         //TODO, use call_user_func_array
         $userType = $this->getType("user");
 
-        $identity = $this->session->get('auth-identity');
+        $identity = $this->session->get('identity');
 
         if (isset($identity['id'])) {
             $user = $userType::findFirstById($identity['id']);
