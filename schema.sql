@@ -31,7 +31,6 @@ CREATE TABLE IF NOT EXISTS `users` (
   `twitter_name` varchar(64) COLLATE utf8_bin DEFAULT NULL,
   `twitter_data` text COLLATE utf8_bin,
   `must_change_password` tinyint(1) DEFAULT NULL,
-  `profile_id` bigint(20) unsigned DEFAULT NULL,
   `group_id` tinyint(3) unsigned NOT NULL,
   `banned` tinyint(1) NOT NULL,
   `suspended` tinyint(1) NOT NULL,

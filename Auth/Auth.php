@@ -400,7 +400,7 @@ class Auth extends Component
 
             if ($user) {
 
-                echo get_class($user);
+                //echo get_class($user);
 
                 $this->checkUserFlags($user);
                 $this->setIdentity($user);

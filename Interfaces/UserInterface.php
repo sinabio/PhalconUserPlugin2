@@ -165,13 +165,6 @@ interface UserInterface
     public function setSuspended($suspended);
 
     /**
-     * Returns the value of field profile_id
-     *
-     * @return integer
-     */
-    public function getProfileId();
-
-    /**
      * Method to set the value of field twitter_data
      *
      * @param string $twitter_data
@@ -213,14 +206,6 @@ interface UserInterface
      * @return string
      */
     public function getLinkedinName();
-
-    /**
-     * Method to set the value of field profile_id
-     *
-     * @param integer $profile_id
-     * @return $this
-     */
-    public function setProfileId($profile_id);
 
     /**
      * Method to set the value of field twitter_id
