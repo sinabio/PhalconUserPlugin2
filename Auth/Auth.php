@@ -6,7 +6,6 @@ use Phalcon\UserPlugin\Connectors\FacebookConnector;
 use Phalcon\UserPlugin\Connectors\GoogleConnector;
 use Phalcon\UserPlugin\Connectors\LinkedInConnector;
 use Phalcon\UserPlugin\Connectors\TwitterConnector;
-use Phalcon\UserPlugin\Interfaces\UserInterface;
 
 
 //use Phalcon\UserPlugin\Repository\User\UserRepository as User;
@@ -149,14 +148,13 @@ class Auth extends Component
         if ($facebookUser) {
             $pupRedirect = $di->get('config')->pup->redirect;
             $email = isset($facebookUserProfile['email']) ? $facebookUserProfile['email'] : 'a@a.com';
-            $user = call_user_func_array(array($userType, "findFirst"), array(
-                'conditions' => "email='?1' OR facebook_id='?2'",
+            $user = call_user_func_array(array($userType, "findFirst"), array(array(
+                'conditions' => "email = ?1 OR facebook_id = ?2 ",
                 'bind' => array(
                     1 => $email,
                     2 => $facebookUserProfile['id']
-                )
-            ));
-            //$user = $userType::findFirst(" email='$email' OR facebook_id='" . $facebookUserProfile['id'] . "' ");
+                )))
+            );
 
             if ($user) {
                 $this->checkUserFlags($user);
@@ -201,177 +199,6 @@ class Auth extends Component
         }
     }
 
-    /**
-     * Login with LinkedIn account
-     *
-     * @return \Phalcon\Http\ResponseInterface
-     */
-    public function loginWithLinkedIn()
-    {
-        $userType = $this->getType("user");
-
-        $di = $this->getDI();
-
-        $config = $di->get('config')->pup->connectors->linkedIn->toArray();
-        $config['callback_url'] = $config['callback_url'] . 'user/loginWithLinkedIn';
-        $li = new LinkedInConnector($config);
-
-        $token = $this->session->get('linkedIn_token');
-        $token_expires = $this->session->get('linkedIn_token_expires_on', 0);
-
-        if ($token && $token_expires > time()) {
-            $pupRedirect = $di->get('config')->pup->redirect;
-            $li->setAccessToken($this->session->get('linkedIn_token'));
-            $email = $li->get('/people/~/email-address');
-            $info = $li->get('/people/~');
-
-            preg_match('#id=\d+#', $info['siteStandardProfileRequest']['url'], $matches);
-            $linkedInId = str_replace("id=", "", $matches[0]);
-
-            $user = $userType::findFirst("email='$email' OR linkedin_id='$linkedInId'");
-
-            if ($user) {
-                $this->checkUserFlags($user);
-                $this->setIdentity($user);
-                $this->saveSuccessLogin($user);
-
-                if (!$user->getLinkedinId()) {
-                    $user->setLinkedinId($linkedInId);
-                    $user->setLinkedinName($info['firstName'] . ' ' . $info['lastName']);
-                    $user->update();
-                }
-
-                return $this->response->redirect($pupRedirect->success);
-            } else {
-                $password = $this->generatePassword();
-
-                $user = new $userType;
-                $user->setDI($di);
-                $user->setEmail($email);
-                $user->setPassword($di->get('security')->hash($password));
-                $user->setLinkedinId($linkedInId);
-                $user->setLinkedinName($info['firstName'] . ' ' . $info['lastName']);
-                $user->setLinkedinData(json_encode($info));
-                $user->setMustChangePassword(0);
-                $user->setGroupId(2);
-                $user->setBanned(0);
-                $user->setSuspended(0);
-                $user->setActive(1);
-
-                if (true == $user->create()) {
-                    $this->setIdentity($user);
-                    $this->saveSuccessLogin($user);
-
-                    return $this->response->redirect($pupRedirect->success);
-                } else {
-                    foreach ($user->getMessages() as $message) {
-                        $this->flashSession->error($message->getMessage());
-                    }
-
-                    return $this->response->redirect($pupRedirect->failure);
-                }
-            }
-
-        } else { // If token is not set
-            if ($this->request->get('code')) {
-                $token = $li->getAccessToken($this->request->get('code'));
-                $token_expires = $li->getAccessTokenExpiration();
-                $this->session->set('linkedIn_token', $token);
-                $this->session->set('linkedIn_token_expires_on', time() + $token_expires);
-            }
-        }
-
-        $state = uniqid();
-        $url = $li->getLoginUrl(array(LinkedInConnector::SCOPE_BASIC_PROFILE, LinkedInConnector::SCOPE_EMAIL_ADDRESS), $state);
-
-        return $this->response->redirect($url, true);
-    }
-
-    /**
-     * Login with Twitter account
-     */
-    public function loginWithTwitter()
-    {
-        $userType = $this->getType("user");
-
-        $di = $this->getDI();
-        $pupRedirect = $di->get('config')->pup->redirect;
-        $oauth = $this->session->get('twitterOauth');
-        $config = $di->get('config')->pup->connectors->twitter->toArray();
-        $config = array_merge($config, array('token' => $oauth['token'], 'secret' => $oauth['secret']));
-
-        $twitter = new TwitterConnector($config, $di);
-        if ($this->request->get('oauth_token')) {
-            $twitter->access_token();
-
-            $code = $twitter->user_request(array(
-                'url' => $twitter->url('1.1/account/verify_credentials')
-            ));
-
-            if ($code == 200) {
-                $data = json_decode($twitter->response['response'], true);
-
-                if ($data['screen_name']) {
-                    $code = $twitter->user_request(array(
-                        'url' => $twitter->url('1.1/users/show'),
-                        'params' => array(
-                            'screen_name' => $data['screen_name']
-                        )
-                    ));
-
-                    if ($code == 200) {
-                        $response = json_decode($twitter->response['response'], true);
-                        $twitterId = $response['id'];
-                        $user = $userType::findFirst("twitter_id='$twitterId'");
-
-                        if ($user) {
-                            $this->checkUserFlags($user);
-                            $this->setIdentity($user);
-                            $this->saveSuccessLogin($user);
-
-                            return $this->response->redirect($pupRedirect->success);
-                        } else {
-                            $password = $this->generatePassword();
-                            $email = $response['screen_name'] . rand(100000, 999999) . '@domain.tld'; // Twitter does not prived user's email
-                            $user = new $userType;
-                            $user->setDI($di);
-                            $user->setEmail($email);
-                            $user->setPassword($di->get('security')->hash($password));
-                            $user->setTwitterId($response['id']);
-                            $user->setTwitterName($response['name']);
-                            $user->setTwitterData(json_encode($response));
-                            $user->setMustChangePassword(0);
-                            $user->setGroupId(2);
-                            $user->setBanned(0);
-                            $user->setSuspended(0);
-                            $user->setActive(1);
-
-                            if (true == $user->create()) {
-                                $this->setIdentity($user);
-                                $this->saveSuccessLogin($user);
-                                $this->flashSession->notice('Because Twitter does not provide an email address, we had randomly generated one: ' . $email);
-
-                                return $this->response->redirect($pupRedirect->success);
-                            } else {
-                                foreach ($user->getMessages() as $message) {
-                                    $this->flashSession->error($message->getMessage());
-                                }
-
-                                return $this->response->redirect($pupRedirect->failure);
-                            }
-                        }
-                    }
-                }
-            } else {
-                $di->get('logger')->begin();
-                $di->get('logger')->error(json_encode($twitter->response));
-                $di->get('logger')->commit();
-            }
-        } else {
-            return $this->response->redirect($twitter->request_token(), true);
-        }
-    }
-
     public function loginWithGoogle()
     {
         $userType = $this->getType("user");
@@ -396,7 +223,13 @@ class Auth extends Component
 
             //echo "\"".$this->_modelConfig["user"]."\"";
 
-            $user = call_user_func_array(array($this->_modelConfig["user"], "findFirst"), array("gplus_id='$gplusId' OR email = '$email'"));
+            $user = call_user_func_array(array($this->_modelConfig["user"], "findFirst"),
+                array(array("gplus_id=?1 OR email = ?2",
+                    "bind" => array(
+                        1 => $gplusId,
+                        2 => $email)
+                ))
+            );
 
             if ($user) {
 
@@ -455,7 +288,7 @@ class Auth extends Component
      */
     public function saveSuccessLogin($user)
     {
-        if($user instanceof $user){
+        if ($user instanceof $user) {
             $successLoginType = $this->getType("userSuccessLogins");
             $di = $this->getDI();
             $successLogin = new $successLoginType;
@@ -468,7 +301,7 @@ class Auth extends Component
                 $messages = $successLogin->getMessages();
                 throw new Exception($messages[0]);
             }
-        }else{
+        } else {
             throw new Exception('$user not instance of UserInterface');
         }
     }
@@ -522,7 +355,7 @@ class Auth extends Component
      */
     public function createRememberEnviroment($user)
     {
-        if($user instanceof $user){
+        if ($user instanceof $user) {
             $rememberType = $this->getType("userRememberTokens");
 
             $di = $this->getDI();
@@ -541,8 +374,8 @@ class Auth extends Component
                 $this->cookies->set('RMU', $user->getId(), $expire);
                 $this->cookies->set('RMT', $token, $expire);
             }
-        }else{
-                throw new Exception('$user not instance of UserInterface');
+        } else {
+            throw new Exception('$user not instance of UserInterface');
         }
     }
 
@@ -633,7 +466,7 @@ class Auth extends Component
      */
     public function checkUserFlags($user)
     {
-        if($user instanceof $user){
+        if ($user instanceof $user) {
             if (false === $user->isActive()) {
                 throw new Exception('The user is inactive');
             }
@@ -645,7 +478,7 @@ class Auth extends Component
             if (true === $user->isSuspended()) {
                 throw new Exception('The user is suspended');
             }
-        }else{
+        } else {
             throw new Exception('$user not instance of UserInterface');
         }
     }
@@ -765,5 +598,180 @@ class Auth extends Component
         $chars = "abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ123456789#@%_.";
 
         return substr(str_shuffle($chars), 0, $length);
+    }
+
+    /**
+     * Login with LinkedIn account
+     *
+     * @return \Phalcon\Http\ResponseInterface
+     */
+    public function loginWithLinkedIn()
+    {
+        throw new \Exception("Not tested yet");
+
+        $userType = $this->getType("user");
+
+        $di = $this->getDI();
+
+        $config = $di->get('config')->pup->connectors->linkedIn->toArray();
+        $config['callback_url'] = $config['callback_url'] . 'user/loginWithLinkedIn';
+        $li = new LinkedInConnector($config);
+
+        $token = $this->session->get('linkedIn_token');
+        $token_expires = $this->session->get('linkedIn_token_expires_on', 0);
+
+        if ($token && $token_expires > time()) {
+            $pupRedirect = $di->get('config')->pup->redirect;
+            $li->setAccessToken($this->session->get('linkedIn_token'));
+            $email = $li->get('/people/~/email-address');
+            $info = $li->get('/people/~');
+
+            preg_match('#id=\d+#', $info['siteStandardProfileRequest']['url'], $matches);
+            $linkedInId = str_replace("id=", "", $matches[0]);
+
+            $user = $userType::findFirst("email='$email' OR linkedin_id='$linkedInId'");
+
+            if ($user) {
+                $this->checkUserFlags($user);
+                $this->setIdentity($user);
+                $this->saveSuccessLogin($user);
+
+                if (!$user->getLinkedinId()) {
+                    $user->setLinkedinId($linkedInId);
+                    $user->setLinkedinName($info['firstName'] . ' ' . $info['lastName']);
+                    $user->update();
+                }
+
+                return $this->response->redirect($pupRedirect->success);
+            } else {
+                $password = $this->generatePassword();
+
+                $user = new $userType;
+                $user->setDI($di);
+                $user->setEmail($email);
+                $user->setPassword($di->get('security')->hash($password));
+                $user->setLinkedinId($linkedInId);
+                $user->setLinkedinName($info['firstName'] . ' ' . $info['lastName']);
+                $user->setLinkedinData(json_encode($info));
+                $user->setMustChangePassword(0);
+                $user->setGroupId(2);
+                $user->setBanned(0);
+                $user->setSuspended(0);
+                $user->setActive(1);
+
+                if (true == $user->create()) {
+                    $this->setIdentity($user);
+                    $this->saveSuccessLogin($user);
+
+                    return $this->response->redirect($pupRedirect->success);
+                } else {
+                    foreach ($user->getMessages() as $message) {
+                        $this->flashSession->error($message->getMessage());
+                    }
+
+                    return $this->response->redirect($pupRedirect->failure);
+                }
+            }
+
+        } else { // If token is not set
+            if ($this->request->get('code')) {
+                $token = $li->getAccessToken($this->request->get('code'));
+                $token_expires = $li->getAccessTokenExpiration();
+                $this->session->set('linkedIn_token', $token);
+                $this->session->set('linkedIn_token_expires_on', time() + $token_expires);
+            }
+        }
+
+        $state = uniqid();
+        $url = $li->getLoginUrl(array(LinkedInConnector::SCOPE_BASIC_PROFILE, LinkedInConnector::SCOPE_EMAIL_ADDRESS), $state);
+
+        return $this->response->redirect($url, true);
+    }
+
+    /**
+     * Login with Twitter account
+     */
+    public function loginWithTwitter()
+    {
+        throw new \Exception("Not tested yet");
+
+        $userType = $this->getType("user");
+
+        $di = $this->getDI();
+        $pupRedirect = $di->get('config')->pup->redirect;
+        $oauth = $this->session->get('twitterOauth');
+        $config = $di->get('config')->pup->connectors->twitter->toArray();
+        $config = array_merge($config, array('token' => $oauth['token'], 'secret' => $oauth['secret']));
+
+        $twitter = new TwitterConnector($config, $di);
+        if ($this->request->get('oauth_token')) {
+            $twitter->access_token();
+
+            $code = $twitter->user_request(array(
+                'url' => $twitter->url('1.1/account/verify_credentials')
+            ));
+
+            if ($code == 200) {
+                $data = json_decode($twitter->response['response'], true);
+
+                if ($data['screen_name']) {
+                    $code = $twitter->user_request(array(
+                        'url' => $twitter->url('1.1/users/show'),
+                        'params' => array(
+                            'screen_name' => $data['screen_name']
+                        )
+                    ));
+
+                    if ($code == 200) {
+                        $response = json_decode($twitter->response['response'], true);
+                        $twitterId = $response['id'];
+                        $user = $userType::findFirst("twitter_id='$twitterId'");
+
+                        if ($user) {
+                            $this->checkUserFlags($user);
+                            $this->setIdentity($user);
+                            $this->saveSuccessLogin($user);
+
+                            return $this->response->redirect($pupRedirect->success);
+                        } else {
+                            $password = $this->generatePassword();
+                            $email = $response['screen_name'] . rand(100000, 999999) . '@domain.tld'; // Twitter does not prived user's email
+                            $user = new $userType;
+                            $user->setDI($di);
+                            $user->setEmail($email);
+                            $user->setPassword($di->get('security')->hash($password));
+                            $user->setTwitterId($response['id']);
+                            $user->setTwitterName($response['name']);
+                            $user->setTwitterData(json_encode($response));
+                            $user->setMustChangePassword(0);
+                            $user->setGroupId(2);
+                            $user->setBanned(0);
+                            $user->setSuspended(0);
+                            $user->setActive(1);
+
+                            if (true == $user->create()) {
+                                $this->setIdentity($user);
+                                $this->saveSuccessLogin($user);
+                                $this->flashSession->notice('Because Twitter does not provide an email address, we had randomly generated one: ' . $email);
+
+                                return $this->response->redirect($pupRedirect->success);
+                            } else {
+                                foreach ($user->getMessages() as $message) {
+                                    $this->flashSession->error($message->getMessage());
+                                }
+
+                                return $this->response->redirect($pupRedirect->failure);
+                            }
+                        }
+                    }
+                }
+            } else {
+                $di->get('logger')->begin();
+                $di->get('logger')->error(json_encode($twitter->response));
+                $di->get('logger')->commit();
+            }
+        } else {
+            return $this->response->redirect($twitter->request_token(), true);
+        }
     }
 }
