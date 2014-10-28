@@ -42,7 +42,6 @@ CREATE TABLE IF NOT EXISTS `users` (
   KEY `linkedin_id` (`linkedin_id`,`linkedin_name`),
   KEY `gplus_id` (`gplus_id`,`gplus_name`,`twitter_id`,`twitter_name`),
   KEY `name` (`name`),
-  KEY `profile_id` (`profile_id`),
   KEY `group_id` (`group_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin AUTO_INCREMENT=9 ;
 
@@ -99,9 +98,9 @@ CREATE TABLE IF NOT EXISTS `user_groups` (
 --
 
 INSERT INTO `user_groups` (`id`, `name`, `active`) VALUES
-(1, 'Administrators', 'Y'),
-(2, 'Users', 'Y'),
-(3, 'Read-Only', 'Y');
+(1, 'Administrators', 1),
+(2, 'Users', 1),
+(3, 'Read-Only', 1);
 
 -- --------------------------------------------------------
 
@@ -142,26 +141,28 @@ CREATE TABLE IF NOT EXISTS `user_permissions` (
 INSERT INTO `user_permissions` (`id`, `group_id`, `resource`, `action`) VALUES
 (1, 3, 'users', 'index'),
 (2, 3, 'users', 'search'),
-(3, 3, 'profiles', 'index'),
-(4, 3, 'profiles', 'search'),
+(3, 3, 'user_groups', 'index'),
+(4, 3, 'user_groups', 'search'),
 (5, 1, 'users', 'index'),
 (6, 1, 'users', 'search'),
 (7, 1, 'users', 'edit'),
 (8, 1, 'users', 'create'),
 (9, 1, 'users', 'delete'),
 (10, 1, 'users', 'changePassword'),
-(11, 1, 'profiles', 'index'),
-(12, 1, 'profiles', 'search'),
-(13, 1, 'profiles', 'edit'),
-(14, 1, 'profiles', 'create'),
-(15, 1, 'profiles', 'delete'),
+(11, 1, 'user_groups', 'index'),
+(12, 1, 'user_groups', 'search'),
+(13, 1, 'user_groups', 'edit'),
+(14, 1, 'user_groups', 'create'),
+(15, 1, 'user_groups', 'delete'),
 (16, 1, 'permissions', 'index'),
 (17, 2, 'users', 'index'),
 (18, 2, 'users', 'search'),
 (19, 2, 'users', 'edit'),
 (20, 2, 'users', 'create'),
-(21, 2, 'profiles', 'index'),
-(22, 2, 'profiles', 'search');
+(20, 1, 'user_account', 'edit'),
+(20, 2, 'user_account', 'edit'),
+(21, 2, 'user_groups', 'index'),
+(22, 2, 'user_groups', 'search');
 
 -- --------------------------------------------------------
 

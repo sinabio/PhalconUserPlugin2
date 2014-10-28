@@ -35,6 +35,8 @@ class LoginForm extends Form
             ))
         ));
 
+        $email->setLabel('E-Mail');
+
         $this->add($email);
 
         //Password
@@ -48,6 +50,8 @@ class LoginForm extends Form
                 'message' => $translate['The password is required']
             ))
         );
+
+        $password->setLabel('Password');
 
         $this->add($password);
 
@@ -72,7 +76,7 @@ class LoginForm extends Form
 
         $this->add($csrf);
 
-        $this->add(new Submit('go', array(
+        $this->add(new Submit('Login', array(
             'class' => 'btn btn-success'
         )));
     }

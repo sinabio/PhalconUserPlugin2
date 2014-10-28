@@ -25,6 +25,8 @@ class ChangePasswordForm extends Form
             ))
         ));
 
+        $currentPassword->setLabel('Current Password');
+
         $this->add($currentPassword);
 
         $password = new Password('password', array(
