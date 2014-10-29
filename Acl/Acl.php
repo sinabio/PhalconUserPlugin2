@@ -6,6 +6,7 @@ use Phalcon\Acl\Adapter\Memory as AclMemory;
 use Phalcon\Acl\Role as AclRole;
 use Phalcon\Acl\Resource as AclResource;
 use MightyMovies\Models\Profiles;
+use Phalcon\UserPlugin\Auth\Exception;
 
 /**
  * MightyMovies\Acl\Acl
@@ -124,7 +125,12 @@ class Acl extends Component
 
         // Check if the ACL is already generated
         if (!file_exists(APP_DIR . $this->filePath)) {
-            $this->acl = $this->rebuild();
+            try{
+                $this->acl = $this->rebuild();
+            }catch (Exception $ex){
+                echo $ex->getMessage();
+            }
+
             return $this->acl;
         }
 
@@ -211,10 +217,6 @@ class Acl extends Component
             foreach ($user_group->getPermissions() as $permission) {
                 $acl->allow($user_group->getName(), $permission->getResource(), $permission->getAction());
             }
-
-            // Always grant these permissions
-            //TODO: Add all must have permission
-            $acl->allow($user_group->getName(), 'users', 'changePassword');
         }
 
         if (touch(APP_DIR . $this->filePath) && is_writable(APP_DIR . $this->filePath)) {

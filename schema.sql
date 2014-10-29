@@ -138,31 +138,32 @@ CREATE TABLE IF NOT EXISTS `user_permissions` (
 -- Dumping data for table `permissions`
 --
 
-INSERT INTO `user_permissions` (`id`, `group_id`, `resource`, `action`) VALUES
-(1, 3, 'users', 'index'),
-(2, 3, 'users', 'search'),
-(3, 3, 'user_groups', 'index'),
-(4, 3, 'user_groups', 'search'),
-(5, 1, 'users', 'index'),
-(6, 1, 'users', 'search'),
-(7, 1, 'users', 'edit'),
-(8, 1, 'users', 'create'),
-(9, 1, 'users', 'delete'),
-(10, 1, 'users', 'changePassword'),
-(11, 1, 'user_groups', 'index'),
-(12, 1, 'user_groups', 'search'),
-(13, 1, 'user_groups', 'edit'),
-(14, 1, 'user_groups', 'create'),
-(15, 1, 'user_groups', 'delete'),
-(16, 1, 'permissions', 'index'),
-(17, 2, 'users', 'index'),
-(18, 2, 'users', 'search'),
-(19, 2, 'users', 'edit'),
-(20, 2, 'users', 'create'),
-(20, 1, 'user_account', 'edit'),
-(20, 2, 'user_account', 'edit'),
-(21, 2, 'user_groups', 'index'),
-(22, 2, 'user_groups', 'search');
+INSERT INTO `user_permissions` ( `group_id`, `resource`, `action`) VALUES
+(3, 'users', 'index'),
+(3, 'users', 'search'),
+(3, 'user_groups', 'index'),
+(3, 'user_groups', 'search'),
+(1, 'users', 'index'),
+(1, 'users', 'search'),
+(1, 'users', 'edit'),
+(1, 'users', 'create'),
+(1, 'users', 'delete'),
+(1, 'user_groups', 'index'),
+(1, 'user_groups', 'search'),
+(1, 'user_groups', 'edit'),
+(1, 'user_groups', 'create'),
+(1, 'user_groups', 'delete'),
+(1, 'permissions', 'index'),
+(2, 'users', 'index'),
+(2, 'users', 'search'),
+(2, 'users', 'edit'),
+(2, 'users', 'create'),
+(1, 'user_account', 'edit'),
+(2, 'user_account', 'edit'),
+(1, 'user_account', 'changePassword'),
+(2, 'user_account', 'changePassword'),
+(2, 'user_groups', 'index'),
+(2, 'user_groups', 'search');
 
 -- --------------------------------------------------------
 

@@ -13,11 +13,6 @@ class GoogleConnector
 {
     private $config;
 
-    private $scopes = array(
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/userinfo.profile'
-    );
-
     final public function __construct(array $config)
     {
         $this->config = $config;
@@ -70,7 +65,7 @@ class GoogleConnector
 
         $client->setAccessType("offline");
 
-        $client->addScope(\Google_Service_Oauth2::PLUS_LOGIN);
+        $client->addScope(\Google_Service_Oauth2::PLUS_ME);
         $client->addScope(\Google_Service_Oauth2::USERINFO_EMAIL);
 
         //$client->setScopes($this->scopes);

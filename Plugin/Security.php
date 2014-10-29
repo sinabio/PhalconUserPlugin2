@@ -41,7 +41,7 @@ class Security extends Plugin
             // If there is no identity available the user is redirected to session/login
             if (!is_array($identity)) {
 
-                $this->flash->notice('Für diesen Bereich must du dich einloggen...');
+                $this->flash->notice($config['pup']['messages']['must_be_logged_in']);
 
                 return $this->response->redirect($config->pup->redirect->failure);
             }
@@ -49,7 +49,7 @@ class Security extends Plugin
             // Check if the user have permission to the current option
             if (!$this->acl->isAllowed($identity['group'], $controllerName, $actionName)) {
 
-                $this->flash->notice('Zu diesem Bereich hast du keinen Zugriff: ' . $controllerName . ':' . $actionName);
+                $this->flash->notice(sprintf($config['pup']['messages']['not_permitted'], $controllerName, $actionName));
 
                 return $this->response->redirect($config->pup->redirect->failure);
             }

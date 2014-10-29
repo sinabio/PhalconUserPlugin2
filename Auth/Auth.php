@@ -70,7 +70,7 @@ class Auth extends Component
      *
      * @param object $user
      */
-    private function setIdentity($user)
+    public function setIdentity($user)
     {
         $st_identity = array(
             'id' => $user->getId(),
@@ -127,6 +127,9 @@ class Auth extends Component
         $userType = $this->getType("user");
 
         $di = $this->getDI();
+
+        $registration_config = $di->get('config')->pup->registration;
+
         $facebook = new FacebookConnector($di);
         $facebookUser = $facebook->getUser();
 
@@ -148,6 +151,7 @@ class Auth extends Component
         if ($facebookUser) {
             $pupRedirect = $di->get('config')->pup->redirect;
             $email = isset($facebookUserProfile['email']) ? $facebookUserProfile['email'] : 'a@a.com';
+            $name = $facebookUserProfile['name'];
             $user = call_user_func_array(array($userType, "findFirst"), array(array(
                 'conditions' => "email = ?1 OR facebook_id = ?2 ",
                 'bind' => array(
@@ -175,15 +179,18 @@ class Auth extends Component
                 $user = new $userType;
                 $user->setDI($di);
                 $user->setEmail($email);
+                $user->setName($name);
                 $user->setPassword($di->get('security')->hash($password));
                 $user->setFacebookId($facebookUserProfile['id']);
                 $user->setFacebookName($facebookUserProfile['name']);
                 $user->setFacebookData(serialize($facebookUserProfile));
                 $user->setMustChangePassword(0);
-                $user->setGroupId(2);
                 $user->setBanned(0);
                 $user->setSuspended(0);
-                $user->setActive(1);
+
+                //set config from config file
+                $user->setGroupId($registration_config['default_user_group_id']);
+                $user->setActive($registration_config['default_user_is_active']);
 
                 if (true == $user->create()) {
                     $this->setIdentity($user);
@@ -204,6 +211,8 @@ class Auth extends Component
         $userType = $this->getType("user");
 
         $di = $this->getDI();
+
+        $registration_config = $di->get('config')->pup->registration;
 
         $config = $di->get('config')->pup->connectors->google->toArray();
 
@@ -254,15 +263,18 @@ class Auth extends Component
                 $user = new $userType;
                 $user->setDI($di); // either it crashes apache and won't save!
                 $user->setEmail($email);
+                $user->setName($name);
                 $user->setPassword($di->get('security')->hash($password));
                 $user->setGplusId($gplusId);
                 $user->setGplusName($name);
                 $user->setGplusData(serialize($response['userinfo']));
                 $user->setMustChangePassword(0);
-                $user->setGroupId(2);
                 $user->setBanned(0);
                 $user->setSuspended(0);
-                $user->setActive(1);
+
+                //set config from config file
+                $user->setGroupId($registration_config['default_user_group_id']);
+                $user->setActive($registration_config['default_user_is_active']);
 
                 if (true == $user->create()) {
                     $this->setIdentity($user);
