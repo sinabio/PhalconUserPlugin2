@@ -128,7 +128,8 @@ class Acl extends Component
             try{
                 $this->acl = $this->rebuild();
             }catch (Exception $ex){
-                echo $ex->getMessage();
+            	echo $ex->getMessage();
+            	exit;
             }
 
             return $this->acl;
@@ -192,7 +193,7 @@ class Acl extends Component
      *
      * @return \Phalcon\Acl\Adapter\Memory
      */
-    public function rebuild()
+    private function rebuild()
     {
         $userGroupType = $this->getType("userGroups");
 
@@ -200,22 +201,28 @@ class Acl extends Component
 
         $acl->setDefaultAction(\Phalcon\Acl::DENY);
 
-        // Register roles
+        // Register roles from DB
         $user_groups = call_user_func_array(array($userGroupType, "find"), array('active = 1'));
 
         foreach ($user_groups as $user_group) {
             $acl->addRole(new AclRole($user_group->getName()));
         }
 
+        // Add Resources from acl.php file
         foreach ($this->getPrivateResources() as $resource => $actions) {
             $acl->addResource(new AclResource($resource), $actions);
         }
 
-        // Grant acess to private area to role Users
+        // Grant acess to private area to role Users from DB
         foreach ($user_groups as $user_group) {
             // Grant permissions in "permissions" model
             foreach ($user_group->getPermissions() as $permission) {
-                $acl->allow($user_group->getName(), $permission->getResource(), $permission->getAction());
+            	if($acl->isResource ($permission->getResource())){
+                	$acl->allow($user_group->getName(), $permission->getResource(), $permission->getAction());
+            	}else{
+            		throw new Exception("Ressource from DB does not exists in Ressource File (acl.php): "
+            			."error processing resource: '" . $permission->getResource() ."'");
+            	}
             }
         }
 
