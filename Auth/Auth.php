@@ -166,7 +166,7 @@ class Auth extends Component
                 if (!$user->getFacebookId()) {
                     $user->setFacebookId($facebookUserProfile['id']);
                     $user->setFacebookName($facebookUserProfile['name']);
-                    $user->setFacebookData(serialize($facebookUserProfile));
+                    $user->setFacebookData(base64_encode(serialize($facebookUserProfile)));
                     $user->update();
                 }
 
@@ -183,7 +183,7 @@ class Auth extends Component
                 $user->setPassword($di->get('security')->hash($password));
                 $user->setFacebookId($facebookUserProfile['id']);
                 $user->setFacebookName($facebookUserProfile['name']);
-                $user->setFacebookData(serialize($facebookUserProfile));
+                $user->setFacebookData(base64_encode(serialize($facebookUserProfile)));
                 $user->setMustChangePassword(0);
                 $user->setBanned(0);
                 $user->setSuspended(0);
@@ -250,7 +250,7 @@ class Auth extends Component
                 if (!$user->getGplusId()) {
                     $user->setGplusId($gplusId);
                     $user->setGplusName($name);
-                    $user->setGplusData(serialize($response['userinfo']));
+                    $user->setGplusData(base64_encode(serialize($response['userinfo'])));
                     $user->update();
                 }
 
@@ -267,7 +267,7 @@ class Auth extends Component
                 $user->setPassword($di->get('security')->hash($password));
                 $user->setGplusId($gplusId);
                 $user->setGplusName($name);
-                $user->setGplusData(serialize($response['userinfo']));
+                $user->setGplusData(base64_encode(serialize($response['userinfo'])));
                 $user->setMustChangePassword(0);
                 $user->setBanned(0);
                 $user->setSuspended(0);

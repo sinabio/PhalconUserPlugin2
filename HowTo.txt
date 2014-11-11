@@ -1,0 +1,93 @@
+How to install:
+
+1. Composer
+------------------------------------------------------------
+"require": {
+        "mighty-code/phalcon-user-plugin-2": "dev-master"
+    },
+
+2. loader.php
+------------------------------------------------------------
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+3. config.php
+------------------------------------------------------------
+'pup' => array(
+    'redirect' => array(
+        'success' => 'user_account/edit',
+        'failure' => 'user/login'
+    ),
+    'messages'=> array(
+        'not_permitted' => 'You are not permitted here...(%s/%s)',
+        'must_be_logged_in' => 'You have to login...'
+    ),
+    'models' => array(
+        'user' => "MightyCodePup\Models\Users",
+        'userSuccessLogins' => "MightyCodePup\Models\UserSuccessLogins",
+        'userResetPasswords' => "MightyCodePup\Models\UserResetPasswords",
+        'userPasswordChanges' => "MightyCodePup\Models\UserPasswordChanges",
+        'userRememberTokens' => "MightyCodePup\Models\UserRememberTokens",
+        'userPermissions' => "MightyCodePup\Models\UserPermissions",
+        'userGroups' => "MightyCodePup\Models\UserGroups",
+        'userFailedLogins' => "MightyCodePup\Models\UserFailedLogins",
+    ),
+    'registration'=> array(
+        'default_user_group_id' => 2,
+        'default_user_is_active' => 1
+    ),
+    'connectors' => array(
+         'facebook' => array(
+             'appId' => 'YOUR_FACEBOOK_APP_ID',
+             'secret' => 'YOUR_FACEBOOK_APP_SECRET'
+         ),
+         'linkedIn' => array(
+             'api_key' => 'YOUR_LINKED_IN_APP_ID',
+             'api_secret' => 'YOUR_LINKED_IN_APP_SECRET',
+             'callback_url' => 'CALLBACK_URL'
+         ),  
+         'twitter' => array(
+             'consumer_key' => 'TWITTER_CONSUMER_KEY',
+             'consumer_secret' => 'TWITTER_CONSUMER_SECRET',
+             'user_agent' => 'YOUR_APPLICATION_NAME', // Leave empty if you don't want to set it
+         ),    
+         'google' => array(
+             'application_name' => 'YOUR_APPLICATION_NAME',
+             'client_id' => 'YOUR_CLIENT_ID',
+             'client_secret' => 'YOUR_CLIENT_SECRET',
+             'developer_key' => 'YOUR_DEVELOPER_KEY',
+             'redirect_uri' => 'YOUR_REDIRECT_URI'
+         ),             
+     )
+),
+
+//optional: 
+'mail' => array(
+        'fromName' => 'PhalconUserPlugin 2 by Mighty Code',
+        'fromEmail' => 'no-reply@mighty-code.com',
+        'smtp' => array(
+            'server' => 'mail.mighty-code.com',
+            'port' => 465,
+            'security' => 'ssl',
+            'username' => 'mighty',
+            'password' => 'WiueGampelSauceCDinere'
+        )
+    )
+
+4. Add Models or create your own inheritating Plugins Interfaces
+//show sample
+
+5. Add Tables to your Database
+schema.sql
+
+6. Define all permissions in config/acl.php
+
+7. Define Permissions of Groups in permissions Table
+
+8. Add all to DI in services.php
+
+- flash with session!
+- session start
+- dispatcher
+- mail
+
+

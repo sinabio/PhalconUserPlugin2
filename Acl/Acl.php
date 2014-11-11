@@ -193,7 +193,7 @@ class Acl extends Component
      *
      * @return \Phalcon\Acl\Adapter\Memory
      */
-    private function rebuild()
+    public function rebuild()
     {
         $userGroupType = $this->getType("userGroups");
 
