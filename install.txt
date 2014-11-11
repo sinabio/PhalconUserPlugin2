@@ -63,13 +63,13 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 //optional: 
 'mail' => array(
         'fromName' => 'PhalconUserPlugin 2 by Mighty Code',
-        'fromEmail' => 'no-reply@mighty-code.com',
+        'fromEmail' => 'no-reply@domain.com',
         'smtp' => array(
-            'server' => 'mail.mighty-code.com',
+            'server' => '',
             'port' => 465,
             'security' => 'ssl',
-            'username' => 'mighty',
-            'password' => 'WiueGampelSauceCDinere'
+            'username' => '',
+            'password' => ''
         )
     )
 
